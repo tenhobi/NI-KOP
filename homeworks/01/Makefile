@@ -14,7 +14,7 @@ SOURCES := $(shell find $(SOURCEDIR) -name "*.cpp")
 COLOR_DEFAULT = \033[0m
 COLOR_STATUS = \033[1;33m
 COLOR_INFO = \033[1;36m
-COLOR_GOOD = \033[1;32m
+COLOR_DONE = \033[1;32m
 
 ## Tasks
 
@@ -27,12 +27,12 @@ all: run
 compile: $(SOURCES:.cpp=.o)
 	@echo "$(COLOR_INFO)compiling with flags $(COLOR_DEFAULT)$(CXXFLAGS)"
 	@$(CXX) $(CXXFLAGS) $(SOURCES:.cpp=.o) -o $(EXECUTABLE)
-	@echo "$(COLOR_GOOD)COMPILE OK$(COLOR_DEFAULT)"
+	@echo "$(COLOR_DONE)COMPILE DONE$(COLOR_DEFAULT)"
 
 run: compile
 	@echo "$(COLOR_INFO)starting executable$(COLOR_DEFAULT)"
 	@./$(EXECUTABLE)
-	@echo "$(COLOR_GOOD)RUN OK$(COLOR_DEFAULT)"
+	@echo "$(COLOR_DONE)RUN DONE$(COLOR_DEFAULT)"
 
 clean:
 	@echo "$(COLOR_INFO)removing object files$(COLOR_DEFAULT)"
@@ -41,7 +41,7 @@ clean:
 	@rm -f $(EXECUTABLE)
 	@echo "$(COLOR_INFO)removing link files$(COLOR_DEFAULT)"
 	$(shell find $(SOURCEDIR) -type f -name "*.d" -exec rm {} \;)
-	@echo "$(COLOR_GOOD)CLEAN OK$(COLOR_DEFAULT)"
+	@echo "$(COLOR_DONE)CLEAN DONE$(COLOR_DEFAULT)"
 
 ## Inlude D files
 
