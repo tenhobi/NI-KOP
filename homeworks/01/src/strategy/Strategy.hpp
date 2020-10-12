@@ -2,19 +2,22 @@
 // Created by the on 10/10/2020.
 //
 
-#ifndef INC_01_STRATEGY_HPP
-#define INC_01_STRATEGY_HPP
+#ifndef INC_01_STRATEGY_CPP
+#define INC_01_STRATEGY_CPP
 
+
+#include "../Bag.hpp"
 
 class Strategy {
 public:
-    virtual void process() {};
-    bool isConfigurationPossible;
+    virtual void initData(Bag bag) const {}
 
-    explicit Strategy(bool isConfigurationPossible) : isConfigurationPossible(isConfigurationPossible) {}
-private:
-
+    virtual bool shouldContinue(Bag bag,
+                                Item item,
+                                unsigned long usedWeight,
+                                unsigned long collectedCost,
+                                unsigned long estimate) const { return true; }
 };
 
 
-#endif //INC_01_STRATEGY_HPP
+#endif //INC_01_STRATEGY_CPP

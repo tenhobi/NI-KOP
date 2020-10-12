@@ -11,6 +11,6 @@ add_executable(01
         src/strategy/BruteForceStrategy.hpp
         src/strategy/Strategy.hpp
         src/BagSolver.hpp
-        src/BagSolverMethod.hpp
-        src/DecisionResult.hpp
+        src/Item.hpp
+        src/Bag.hpp
         src/main.cpp)

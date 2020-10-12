@@ -5,10 +5,18 @@
 #ifndef INC_01_BRUTEFORCESTRATEGY_HPP
 #define INC_01_BRUTEFORCESTRATEGY_HPP
 
+
 #include "Strategy.hpp"
 
 class BruteForceStrategy : public Strategy {
-
+public:
+    bool shouldContinue(Bag bag,
+                        Item item,
+                        unsigned long usedWeight,
+                        unsigned long collectedCost,
+                        unsigned long estimate) const override {
+        return true;
+    }
 };
 
 
