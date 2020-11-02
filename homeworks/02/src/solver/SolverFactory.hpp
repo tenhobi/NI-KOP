@@ -9,11 +9,11 @@
 
 class SolverFactory {
 public:
-    static Solver fromString(std::string methodString, Bag bag) {
+    static Solver* fromString(std::string methodString, Bag bag) {
         if (methodString == "bf") {
-            return BfSolver(bag);
+            return new BfSolver(bag);
         } else if (methodString == "bnb") {
-            return BnbSolver(bag);
+            return new BnbSolver(bag);
         }
 
         return nullptr;

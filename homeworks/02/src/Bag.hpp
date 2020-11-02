@@ -9,12 +9,15 @@
 class Bag {
 public:
     Bag(long id,
+        long n,
         std::vector<Item> items,
         unsigned long capacity) : id(id),
+                                  n(n),
                                   items(std::move(items)),
                                   capacity(capacity) {}
 
     long id;
+    long n;
     std::vector<Item> items;
     unsigned long capacity;
 };

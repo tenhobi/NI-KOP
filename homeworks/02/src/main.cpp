@@ -3,10 +3,8 @@
 #include <chrono>
 #include <fstream>
 #include <iomanip>
-#include <numeric>
 
 #include "solver/SolverFactory.hpp"
-#include "solver/Solver.hpp"
 
 #define REPEAT_NUMBER 1
 
@@ -21,7 +19,7 @@ int main(int argc, char **argv) {
     // For each file:
     for (int i = 2; i < argc; ++i) {
         double totalTimeMax = 0;
-        std::vector<Solver> fileSolversList;
+        std::vector<Solver*> fileSolversList;
         std::string fileName = argv[i];
 
         std::cout << "file: " << fileName << std::endl;
@@ -53,7 +51,7 @@ int main(int argc, char **argv) {
                 bagItems.emplace_back(weight, cost);
             }
 
-            Bag bag = Bag(id, bagItems, bagCapacity);
+            Bag bag = Bag(id, n, bagItems, bagCapacity);
             fileSolversList.push_back(SolverFactory::fromString(methodArgument, bag));
         }
 
@@ -65,15 +63,13 @@ int main(int argc, char **argv) {
             // TIMER START
             auto start = std::chrono::high_resolution_clock::now();
             for (int l = 0; l < REPEAT_NUMBER; l++) {
-                solver.solve();
+                solver->solve();
             }
             auto finish = std::chrono::high_resolution_clock::now();
             // TIMER END
             std::chrono::duration<double> elapsed = (finish - start) / REPEAT_NUMBER;
 
-            // TODO: solver.toString()
-            std::cout << "Elapsed time: " << std::fixed << std::setprecision(12) << elapsed.count() << "s, "
-                      << std::endl;
+            std::cout << solver->toString() << std::endl;
 
             if (totalTimeMax < elapsed.count()) {
                 totalTimeMax = elapsed.count();

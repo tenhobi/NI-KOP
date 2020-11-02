@@ -2,19 +2,28 @@
 #define INC_01_STRATEGY_CPP
 
 
-#include <SolverResult.hpp>
 #include "../Bag.hpp"
 
 class Solver {
 public:
-    Solver(const Bag &bag) : bag(bag) {}
+    explicit Solver(Bag &bag) : bag(bag) {}
 
-    virtual SolverResult solve() = 0;
+    virtual void solve() = 0;
 
     virtual std::string toString() = 0;
 
-private:
+protected:
     Bag bag;
+
+    unsigned long calculateBestBagEstimate() {
+        unsigned long estimate = 0;
+
+        for (auto item: bag.items) {
+            estimate += item.getCost();
+        }
+
+        return estimate;
+    }
 };
 
 
