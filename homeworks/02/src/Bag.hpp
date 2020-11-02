@@ -8,15 +8,15 @@
 
 class Bag {
 public:
-    Bag(std::vector<Item> items,
-        unsigned long capacity,
-        unsigned long minimalCost) : items(std::move(items)),
-                                     capacity(capacity),
-                                     minimalCost(minimalCost) {}
+    Bag(long id,
+        std::vector<Item> items,
+        unsigned long capacity) : id(id),
+                                  items(std::move(items)),
+                                  capacity(capacity) {}
 
+    long id;
     std::vector<Item> items;
     unsigned long capacity;
-    unsigned long minimalCost;
 };
 
 

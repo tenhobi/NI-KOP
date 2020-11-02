@@ -7,10 +7,6 @@
 
 #include "solver/SolverFactory.hpp"
 #include "solver/Solver.hpp"
-#include "solver/BfSolver.hpp"
-#include "solver/BnbSolver.hpp"
-#include "BagSolver.hpp"
-#include "SolverResult.hpp"
 
 #define REPEAT_NUMBER 1
 
@@ -24,7 +20,7 @@ int main(int argc, char **argv) {
 
     // For each file:
     for (int i = 2; i < argc; ++i) {
-        double fileMaxTime = 0;
+        double totalTimeMax = 0;
         std::vector<Solver> fileSolversList;
         std::string fileName = argv[i];
 
@@ -35,17 +31,16 @@ int main(int argc, char **argv) {
             return 2;
         }
 
-        // Each instance:
+        // Init each instance:
         while (true) {
-            int id, n, bagCapacity, minimalCost;
+            int id, n, bagCapacity;
             file >> id;
 
             if (file.eof()) {
                 break;
             }
 
-            file >> n >> bagCapacity >> minimalCost;
-            id = -id;
+            file >> n >> bagCapacity;
 
             // <weight, cost>
             std::vector<Item> bagItems;
@@ -58,59 +53,47 @@ int main(int argc, char **argv) {
                 bagItems.emplace_back(weight, cost);
             }
 
-            Bag bag = Bag(bagItems, bagCapacity, minimalCost);
+            Bag bag = Bag(id, bagItems, bagCapacity);
             fileSolversList.push_back(SolverFactory::fromString(methodArgument, bag));
         }
 
-        std::vector<SolverResult> measuredInstanceData;
-        // For each instance (as _BagSolver):
+        std::vector<double> instancesTimes;
+        // For each instance:
         for (auto &solver : fileSolversList) {
             std::vector<unsigned long> measuredNodes;
-            bool isSolvable = false;
 
             // TIMER START
             auto start = std::chrono::high_resolution_clock::now();
             for (int l = 0; l < REPEAT_NUMBER; l++) {
-                solver.solveBag();
-                isSolvable = solver.isConfigurationFounded();
-                measuredNodes.push_back(solver.getVisitedNodes());
+                solver.solve();
             }
             auto finish = std::chrono::high_resolution_clock::now();
             // TIMER END
             std::chrono::duration<double> elapsed = (finish - start) / REPEAT_NUMBER;
 
-            // TODO:
-            if (PRINTING) {
-                std::cout << "Elapsed time: " << std::fixed << std::setprecision(12) << elapsed.count() << "s, "
-                          << "nodes average: " << std::setprecision(2) << nodesAverage << " nodes, "
-                          << "configuration exists: " << isSolvable
-                          << std::endl;
-            }
+            // TODO: solver.toString()
+            std::cout << "Elapsed time: " << std::fixed << std::setprecision(12) << elapsed.count() << "s, "
+                      << std::endl;
 
-            if (fileMaxTime < elapsed.count()) {
-                fileMaxTime = elapsed.count();
+            if (totalTimeMax < elapsed.count()) {
+                totalTimeMax = elapsed.count();
             }
-            measuredInstanceData.emplace_back(elapsed.count(), fileMaxTime);
-        }
-
-        if (PRINTING) {
-            std::cout << "FINAL RESULTS:" << std::endl;
+            instancesTimes.emplace_back(elapsed.count());
         }
 
         // We have all the measured data for the file.
         // Now we have to compute it's average.
-
-        unsigned totalItemsCount = measuredInstanceData.size();
+        unsigned totalItemsCount = instancesTimes.size();
         double totalTimeAverage = 0;
-        double totalNodesAverage = 0;
-
-        for (auto &k : measuredInstanceData) {
-            totalTimeAverage += k.getTime();
-            totalNodesAverage += k.getNodes();
+        for (auto &k : instancesTimes) {
+            totalTimeAverage += k;
         }
-
         totalTimeAverage /= totalItemsCount;
-        totalNodesAverage /= totalItemsCount;
+
+        std::cout << "FOR FILE:" << std::endl
+                  << "Average time: " << std::fixed << std::setprecision(12) << totalTimeAverage << "s, "
+                  << "Max time: " << std::fixed << std::setprecision(12) << totalTimeMax << "s, "
+                  << std::endl;
 
         file.close();
     }
