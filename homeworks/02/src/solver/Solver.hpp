@@ -10,7 +10,7 @@ public:
 
     virtual void solve() = 0;
 
-    virtual std::string toString() = 0;
+    virtual void print() = 0;
 
 protected:
     Bag bag;

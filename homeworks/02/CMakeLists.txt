@@ -8,6 +8,9 @@ include_directories(src)
 include_directories(src/solver)
 
 add_executable(02
+        src/solver/FptasSolver.hpp
+        src/solver/GreedySolver.hpp
+        src/solver/DynSolver.hpp
         src/solver/BnbSolver.hpp
         src/solver/BfSolver.hpp
         src/solver/Solver.hpp

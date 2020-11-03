@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
             std::chrono::duration<double> duration = (finish - start) / REPEAT_NUMBER;
             auto durationInMicro = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
 
-            std::cout << solver->toString() << std::endl;
+            solver->print();
 
             if (totalTimeMax < durationInMicro) {
                 totalTimeMax = durationInMicro;

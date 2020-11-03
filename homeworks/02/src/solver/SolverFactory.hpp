@@ -6,6 +6,8 @@
 #include "Solver.hpp"
 #include "BfSolver.hpp"
 #include "BnbSolver.hpp"
+#include "DynSolver.hpp"
+#include "GreedySolver.hpp"
 
 class SolverFactory {
 public:
@@ -14,6 +16,12 @@ public:
             return new BfSolver(bag);
         } else if (methodString == "bnb") {
             return new BnbSolver(bag);
+        } else if (methodString == "dyn") {
+            return new DynSolver(bag);
+        } else if (methodString == "greedy") {
+            return new GreedySolver(bag, false);
+        } else if (methodString == "greedyMod") {
+            return new GreedySolver(bag, true);
         }
 
         return nullptr;

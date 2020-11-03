@@ -17,15 +17,15 @@ public:
         result = bnbRecursion(-1, 0, 0, calculateBestBagEstimate());
     }
 
-    std::string toString() override {
-        std::string itemString;
+    void print() override {
+        std::cout << bag.id << " " << bag.n << " " << result.cost;
 
         while (!result.items.empty()) {
-            itemString += std::string(" ") + (result.items.top() ? "1" : "0");
+            std::cout << " " << (result.items.top() ? "1" : "0");
             result.items.pop();
         }
 
-        return std::to_string(bag.id) + " " + std::to_string(bag.n) + " " + std::to_string(result.cost) + itemString;
+        std::cout << std::endl;
     }
 
 private:
@@ -149,4 +149,4 @@ private:
 };
 
 
-#endif //INC_01_BFSOLVER_HPP
+#endif //INC_01_BNBSOLVER_HPP
