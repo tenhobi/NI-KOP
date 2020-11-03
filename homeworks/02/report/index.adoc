@@ -4,13 +4,13 @@ Jan Bittner (bittnja3)
 
 ## Zadání úlohy
 
-Úkolem je vytvořit program, který řeší rozhodovací verzi problému batohu hrubou silou (*BF*) a pomocí metody větví a hranic (*B&B*).
+Úkolem je vytvořit program, který řeší kostruktivní verzi problému batohu hrubou silou (*BF*), metodou větví a hranic (*B&B*), dynamickým programováním (*dyn*), greedy algoritmem (*greedy*), modifikovaným greedy algoritmem (*greedyMod*) a FPTAS (*FPTAS*).
 
 ## Spuštění programu
 
-Program lze zkompilovat pomocí `make compile` a následně spustit pomocí `./program.out <method> <file>`, tj. např. `./program.out bnb data/NR/NR4_inst.dat`.
+Program lze zkompilovat pomocí `make compile` a následně spustit pomocí `./program.out <method> <file>`, tj. např. `./program.out greedy data/NR/NR4_inst.dat`.
 
-1. `metodu` – `bf` pro metodu hrubou silou, `bnb` pro metodu větví a hranic
+1. `method` – `bf`, `bnb`, `dyn`, `greedy`, `greedyMod`, `fptas`
 1. `file` – soubor nebo soubory ke zpracování
 
 ## Použité prostředky
@@ -29,94 +29,90 @@ Testování bylo provedeno na *Legion 5 15ARH05H*. Stroj obsahuje CPU *AMD Ryzen
 
 ## Rozbor možných variant řešení
 
-Podle zadání mělo být implementováno řešení hrubou silou a pomocí metody *B&B*.
+Podle zadání mohly být implementovány řešení *BF* a *BnB*  rekurzivním algoritmem nebo iterativně. Využil se rekurzivní přístup.
 
-Řešení šlo provést jak iterativním přístupem, tak pomocí rekurze. Pro výhody rekurzivního řešení byly obě mětody implementovány právě rekurzí.
+Podle zadání byly implementovány řešení greedy heuristiky a modifikované heuristiky. Ty se provedly iterativním přístupem.
 
-U metody *B&B* byla implementována pravidla ořezu dle zadání.
+Metoda dynamického programování mohla být provedena buď rekurzí, nebo pamatováním si (ukládáním si) již vypočítaných hodnot. To se navíc dá implementovat dekompozicí podle ceny a podle váhy.
 
-Předpokladem je, že metoda *B&B* díky svému ořezávání bude efektivnější. Zároveň je však předpoklad, že bude asymptoticky stejné s *BF* metodou.
+U metody FPTAS byla použita metoda dynamického programování s dekompozicí podle ceny.
+
+Předpokladem je, že metody *greedy* a *greedyMod* budou nejrychlejší, avšak budou mít větší chybovost při sestavení nejlepšího řešení.
 
 ## Rámcový popis postupu řešení
 
-Obě metody jsou impementovány rekurzivní funkcí, která mění své chování podle zvolené metody. Metody jsou implementovány pomocí strategy patternu, a tedy se rekurzivní funce přizpůsobuje zvolené metodě bez nutnosti ověřování, která metoda je zrovna použita.
+U *greedy metod* se využívá vytvoření kopie dat s hodnotou cena/hmotnost a následným seřazením. Ze seřazeného pole se poté postupně přidávají položky do výběru, pokud nějaká položka nesplňuje podmínky (vejde se do batohu), přeskočí se.
 
-Cílem je řešit rozhodovací problém batodu, a tedy při prvním nalezení vyhovující konfigurace se rekurzivní funkce pro obě metody ukončí.
+U *modifikované greedy metody* se navíc výsledek greedy metody porovná s nejdražší věcí (která se vejde do batohu) a vybere se lepší možnost.
 
-Je měřen čas a počet navštívených nodů. Obě hodnoty jsou průměrovány.
+U metody *dynamického programování* bylo využito řešení s tabulkou a s pamatováním (jinak by nebyla metoda efektivní) a dekompozicí podle ceny. Tabulka se nejprve předpočítá, poté se z dat zjistí požadovaná hodnota a následně je zpětně zjištěna příslušnost jednotlivých předmětů do konfigurace batohu.
+
+Byla použita právě dekompozice podle ceny, aby se dala metoda využít i pro následující metodu *FPTAS*.
+
+U metody *FPTAS* se využívá modifikace metody *dynamického programování* s dekompozicí podle ceny. Podle rovnic ze zadání se upraví předměty a toto modifikované pole je předáno k řešení metodě *dynamického programování*.
+
+Pro všechny metody se počítá čas. Jednotlivé časy instancí jsou zprůměrovány v rámci jedné sady (resp. souboru).
 
 ## Popis kostry algoritmu
 
-Řešení se opírá o nápad implementovat zadaný problém jako průchod grafem, kde z každého nodu (kromě listů) vychází 2 potomci popisující, zda-li se daná věc do batohu přidá, nebo nepřidá. V každém momentě algoritmus ví kolik aktuální batoh váží, jakou má cenu a jakou cenu ještě může do batohu přidat.
+Pro *greedy* metodu se využívá iterativního průchodu upraveného pole s hodnotami `cena/hmotnost` a postupně se vybírají předměty tak, aby se nepřesáhla kapacita batohu.
 
-U řešení hrubou silou se prochází všechny možné možnosti.
+Řešení metody *dynamického programování* se opírá o algoritmus řešení metody dynamického programování ze cvičení a přednášky. Vytvoří se tabulka o velikosti `počet věcí * celková možná cena`. Následně se celá tabulka vyplní. Triviálně se před tím předvyplní sloupec pro první předmět (přidán a nepřidán). Z výsledné tabulky se určí maximální možná cena batohu, jakožto řádek posledního sloupečku, který jako první prezentuje váhu menší nebo rovnu kapacitě batohu.
 
-U metody *B&B* jsou navíc na začátku rekurzivní funkce odřezány ty větve grafu, které nemohou vyústit v úspěšnou konfiguraci (nedosatečná kapacita nebo cena se nedá uspokojit).
+Metodou *FPTAS* se zjednoduší problém dodávaný k řešení metodě *dynamického programování*. Metoda dostane požadovanou relativní chybu `ε`, `0 < ε <= 1`. Metoda určí maximum z cen a vypočítá hodnotu `k`, `k = (ε * maxCost) / n`, která se následně použije pro vytvoření nového pole věcí s cenou `floor(c_i / k)`. Z výsledku zjistíme konfiguraci nového pole věcí a sestavíme podle něj cenu dodaného pole věcí.
 
 ## Naměřené výsledky
 
-Dle předpokladů se podle měření se ukázalo, že metoda *B&B* je efektivnější pro dobrá data a lehce efektivnější pro špatná data. Metoda hrubé síly i metoda *B&B* nebyla naměřena pro instance s 27, 30, 32, 35, 37 a 40 prvky kvůli nedostatečnému výkonu testovacího stroje.
+Podle měření se ukázalo, že metoda *dynamického programování* je pomalejší než heuristické greedy metody, což je způsobeno na úkor nepřesnosti u heuristik. Avšak po využití FPTAS přišlo výrazné zrychlení.
 
-Naměřené časy a počty nodů ukazují následující grafy s logaritmickým měřítkem. První graf znázorňuje závislost času (v mikrosekundách) na počtu věcí v batohu:
+Uvedené časy jsou v `µs`.
 
-image::graph_time.svg[]
+První dva grafy zobrazují porovnání výpočeního času všech metod na sadě NK, zvlášť pro průměr a maximální hodnoty:
 
-Přehled naměřených dat lze vidět i v tabulce:
+image::nk_all_avg.png[]
+image::nk_all_max.png[]
 
+Další dva grafy zobrazují porovnání výpočeního času všech metod na sadě ZKC, zvlášť pro průměr a maximální hodnoty:
 
-[%header, cols="^,>,>,>,>", format=csv]
-|===
-,BF NR,BF ZR,BNB NR,BNB ZR
-4,8.9568,9.1413,1.0031,1.1852
-10,49.2447,47.3357,2.0680,20.3315
-15,1822.5574,1975.0213,10.3024,496.7516
-20,810784.0616,689940.1320,702.0960,151075.2740
-22,3500385.0130,4085678.4555,1923.1958,445346.0930
-25,22265312.3666,29423837.7800,11962.9706,3194298.1780
-|===
+image::zkc_all_avg.png[]
+image::zkc_all_max.png[]
 
-Přehled maximálních časů:
+Další dva grafy zobrazují porovnání výpočeního času všech metod na sadě ZKW, zvlášť pro průměr a maximální hodnoty:
 
-[%header, cols="^,>,>,>,>", format=csv]
-|===
-,BF NR MAX,BF ZR MAX,BNB NR MAX,BNB ZR MAX
-4,36.3000,53.1553,1.2338,9.5500
-10,842.1401,123.0000,2.7504,68.3909
-15,7165.5903,8835.2112,15.5566,2561.5033
-20,2805619.9000,819110.1930,1692.5400,367947.3200
-22,5520834.4010,6733313.2801,13955.8500,605834.3029
-25,52591190.2013,41795933.5100,18266.2500,5637184.9031
-|===
+image::zkw_all_avg.png[]
+image::zkw_all_max.png[]
 
-Druhý graf znázorňuje závislost nodů na počtu věcí v batohu:
+Další grafy zobrazují reakci jednotlivých metod na testovací sady NK, ZKC a ZKW:
 
-image::graph_nodes.svg[]
+image::bf.png[]
+image::bnb.png[]
+image::greedy.png[]
+image::greedymod.png[]
+image::dyn.png[]
+image::fptas.png[]
 
-Přehled naměřených dat lze vidět i v tabulce:
+Následující grafy ukazují vývoj průměrné a maximální chyby FPTAS:
 
-[%header, cols="^,>,>,>,>", format=csv]
-|===
-,BF NR,BF ZR,BNB NR,BNB ZR
-4,19.14,19.61,8.17,16.46
-10,1129.94,1062.27,39.90,464.79
-15,34164.18,32791.25,200.49,9075.87
-20,1173016.43,934556.12,1130.11,214539.65
-22,4704648.14,5141662.45,2905.04,679568.88
-25,25512688.80,27236501.30,13085.69,4177891.80
-|===
+image::error_fptas_avg.png[]
+image::error_fptas_max.png[]
 
-Z grafu je patrné, že počty nodů rostou stejně jako u porovnání časů. Poslední graf zobrazuje histogram metod (na NR datech) pro instance s 15 prvky:
+Následující grafy ukazují vývoj průměrné a maximální chyby greedy a modifikované greedy metody:
 
-image::graph_histogram.svg[]
+image::error_greedy_avg.png[]
+image::error_greedy_max.png[]
 
-Z histogramu lze vyčíst, že průběh metody *BF* se dostane v cca polovině případů do průchodu téměř celého grafu. Oproti tomu metoda *B&B* dle histogramu ořeže velkou část grafu a díky tomu, že metoda nezkoumá špatné větve, nalézá řešení velmi rychle.
+Poslední graf porovnává chybovost všech metod:
+
+image::error_all.png[]
 
 ## Závěr
 
-Podle zadání byly implementovány metody řešení hrubou silou a *B&B*. Obě metody byly řešeny rekurzivně.
+Dle zadání a postupů z přednášek a cvičení byly implementovány metody *greedy heuristiky*, *modifikované greedy heuristiky*, *dynamického programování pomocí tabulky*, *FPTAS* a metody *BF* a *BnB*.
 
-Byly naměřeny jak časy, tak i počty nodů, pro porovnání řešení metod hrubou sílu a *B&B*. Z měření je zjevné, že metoda *B&B* je rychlejší, avšak na špatných datech může dosahovat až stejného počtu průchodu nodů jako metoda hrubé síly.
+Z měření bylo pozorováno, že metoda *dynamického programování* se řádově zrychlí s použitím *FPTAS*. Z pseudopolynomiální složitosti metody *dynamického programování* dělá FPTAS *polynomiální*.
 
-Z dat jde také vidět, že metoda hrubé síly hloupě prochází a testuje většinu konfigurací, proto má dle předpokladu horší čas zpracování. Díky tomu, že implementace metody *BF* ukončí algoritmus ihned poté, kdy je nalezena vyhovující konfigurace, je tato implementace rychlejší než naivnější implementace, která by prohledala vždy všechny možnosti.
+Jednotlivé testovací sady ovlivňují rychlost zejména metody *BnB* a *FPTAS*, u obou je nejpomalejší sada ZKW, která má hodně instancí s věcmi s váhou přesahující maximum a má obecně jiný počet prvků než předchozí sady.
 
-I přes to, že metoda *B&B* je nepochybně efektivnější, podle naměřených dat a sestrojených grafů lze usoudit, že obě metody rostou exponenciálně rychle, a to jak časově, tak i počtem navštívených nodů, což je ovšem předpokládaný stav, jelikož počet navštívených nodů koreluje s vykonaným časem.
+Z naměřených hodnot vyplývá, že pro řešení bez chyby je v průměru  nejlepší metoda *dyn*.
+
+Můžeme si také povšimnout, že i při malém snížení `ε` je na úkor malého zhoršení chybovosti zrychlen čas výpočtu. Z měření jde také vidět, že metody greedy heuristiky jsou pro větší počet věcí chybové oproti optimálnímu řešení kolem 50 %, avšak jsou nejrychlejší z implementovaných metod.

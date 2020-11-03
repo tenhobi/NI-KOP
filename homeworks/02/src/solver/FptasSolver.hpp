@@ -29,7 +29,7 @@ public:
     }
 
 private:
-    double error = 0.125;
+    double error = 0.5;
 
     void solveFptas() {
         // INITIALIZATION
