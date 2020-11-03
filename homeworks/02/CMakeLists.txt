@@ -13,4 +13,5 @@ add_executable(02
         src/solver/Solver.hpp
         src/Item.hpp
         src/Bag.hpp
-        src/main.cpp src/solver/SolverFactory.hpp)
+        src/main.cpp
+        src/solver/SolverFactory.hpp)

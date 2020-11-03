@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     // For each file:
     for (int i = 2; i < argc; ++i) {
         double totalTimeMax = 0;
-        std::vector<Solver*> fileSolversList;
+        std::vector<Solver *> fileSolversList;
         std::string fileName = argv[i];
 
         std::cout << "file: " << fileName << std::endl;
@@ -67,14 +67,15 @@ int main(int argc, char **argv) {
             }
             auto finish = std::chrono::high_resolution_clock::now();
             // TIMER END
-            std::chrono::duration<double> elapsed = (finish - start) / REPEAT_NUMBER;
+            std::chrono::duration<double> duration = (finish - start) / REPEAT_NUMBER;
+            auto durationInMicro = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
 
             std::cout << solver->toString() << std::endl;
 
-            if (totalTimeMax < elapsed.count()) {
-                totalTimeMax = elapsed.count();
+            if (totalTimeMax < durationInMicro) {
+                totalTimeMax = durationInMicro;
             }
-            instancesTimes.emplace_back(elapsed.count());
+            instancesTimes.emplace_back(durationInMicro);
         }
 
         // We have all the measured data for the file.
@@ -87,8 +88,8 @@ int main(int argc, char **argv) {
         totalTimeAverage /= totalItemsCount;
 
         std::cout << "FOR FILE:" << std::endl
-                  << "Average time: " << std::fixed << std::setprecision(12) << totalTimeAverage << "s, "
-                  << "Max time: " << std::fixed << std::setprecision(12) << totalTimeMax << "s, "
+                  << "Average time: " << std::fixed << std::setprecision(6) << totalTimeAverage << "s, "
+                  << "Max time: " << std::fixed << std::setprecision(6) << totalTimeMax << "s, "
                   << std::endl;
 
         file.close();
