@@ -29,7 +29,7 @@ public:
     }
 
 private:
-    double error = 1.0;
+    double error = 0.125;
 
     void solveFptas() {
         // INITIALIZATION
@@ -50,8 +50,6 @@ private:
 
         Bag bagForDynamic = Bag(bag.id, bag.n, std::vector<Item>(), bag.capacity);
         auto oldBag = bag;
-        bag = bagForDynamic;
-        solveDyn();
 
         // COMPUTE
 
@@ -59,6 +57,9 @@ private:
             unsigned long tmpCost = std::floor((double) oldBag.items[i].getCost() / k);
             bagForDynamic.items.emplace_back(oldBag.items[i].getWeight(), tmpCost);
         }
+
+        bag = bagForDynamic;
+        solveDyn();
 
         unsigned long tmpResultCost = 0;
         unsigned long tmpResultWeight = 0;

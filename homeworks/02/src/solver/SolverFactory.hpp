@@ -8,6 +8,7 @@
 #include "BnbSolver.hpp"
 #include "DynSolver.hpp"
 #include "GreedySolver.hpp"
+#include "FptasSolver.hpp"
 
 class SolverFactory {
 public:
@@ -22,6 +23,8 @@ public:
             return new GreedySolver(bag, false);
         } else if (methodString == "greedyMod") {
             return new GreedySolver(bag, true);
+        } else if (methodString == "fptas") {
+            return new FptasSolver(bag);
         }
 
         return nullptr;
