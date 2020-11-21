@@ -6,7 +6,7 @@ My work on NI-KOP in semester B201 at [FIT CTU](https://fit.cvut.cz/en).
 
 It ain't mutch, but it's an honest work. :thumbsup:
 
-## [Homeworks](homeworks)
+## [Homework](homework)
 
 ## License
 
