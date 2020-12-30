@@ -4,7 +4,7 @@ Jan Bittner (bittnja3)
 
 == Zadání úlohy
 
-Úkolem je prozkoumat citlivost metod řešení problému batohu na parametry instancí -- poměru kapacity batohu k sumární váze; korelaci cena/váha; rozložení vah a granualitu.
+Úkolem je prozkoumat jednu z pokročilých iterativních metod na řešení problému batohu. Vybrána byla metoda genetických algoritmů. Cílem je seznámit se s algoritmem a citlivostí parametrů.
 
 == Použité prostředky
 
@@ -16,36 +16,68 @@ Měření bylo spuštěno z *Bashe* prostřednictvím prostředí WSL 2 (*Window
 
 Na zachycení aktuálního času bylo využito `std::chrono::high_resolution_clock::now()`.
 
+Program je možné zkompilovat pomocí `make compile` a následně spustit s parametry souborů, např. `./program.out data/x.dat`.
+
 === Konfigurace testovacího stroje
 
 Testování bylo provedeno na *Legion 5 15ARH05H*. Stroj obsahuje CPU *AMD Ryzen 7 4800H @ 2.90 GHz* a RAM *DDR4 16.00 GB*.
 
-== Rozbor možných variant řešení
+== Algoritmus
+
+Genetický algoritmus funguje na principu vylepšování populace v jednotlivých generacích. Chromosomy jsou pro problém batohu jednotlivé konfigurace, tedy bitový vektor pro přítomnost předmětu v batohu, a geny značí jednotlivou přítomnost věcí v konfiguraci batohu.
+
+Pro prvotní generaci, která obsahuje náhodné věci s hodnotou větší než je průměr, s pravděpodobností přidání 40 %. Dále je přidána triviální kombinace "všechno jsou nuly" a "všechno jsou jedničky".
+
+Pro každou generaci je pravděpodobnost pro křížení chromozomu a pro jeho mutaci, což do populace přidá další chromozomy. Následně jsou uchovány jen ty nejslibnější chromozomy (ty s větší cenou věcí v batohu, tj. fitness), zbytek je zahozen.
+
+Po vytvoření X generací je řešením první jedinec seřazeného pole chromozomů dle fitness.
 
 == Rámcový popis postupu řešení
 
-== Popis kostry algoritmu
+Algoritmus je implementován dle popisu předchozí kapitoly. Implementovány jsou objekty Chromosome, který obsahuje bitový vektor genů a metody pro křížení a mutaci chromozomu. Zbylý kód, tj. chování tvorby a selekce generací, jsou umístěny v `GaSolver.hpp`.
 
 == Naměřené výsledky
 
-1. mutation 10, cross 35 (200)
+Naměřené výsledky jsou výsledky instancí ze souboru `data/x.dat`, který obsahuje 50 instancí o 40 věcech. Relativní chyba je porovnávána oproti řešení dynamickým programováním z předchozích úkolů. Zaměřeno bylo na prozkoumání závislosti na pravděpodobnost křížení, pravděpodobnost mutace a počtu generací. U všeho byla sledována relativní chyba i časová náročnost.
 
-=== Parametr maximální váhy
+=== Závislost na pravděpodobnosti křížení
+
+Pro toto měření byla nastavena velikost populace na 200, maximální počet generací na 100 a pravděpodobnost mutace na 10 %.
+
+Z grafu níže je vidět, že průměrná chyba se udržuje po celou dobu okolo hodnoty 10 %, zatímco maximální chyba se snižuje z 55 % u 20% křížení na 40 % u 100% křížení.
+
+image:error_cross.png[]
+
+Z grafu níže je vidět, že čím je větší pravděpodobnost křížení, tím je výpočet náročnější, což je zřejmé z implementace, kdy se vytváří více chromozomů.
+
+image:time_cross.png[]
+
+=== Závislost na pravděpodobnosti mutace
+
+Pro toto měření byla nastavena velikost populace na 200, maximální počet generací na 100 a pravděpodobnost křížení na 25 %.
+
+Z grafu níže je vidět, že průměrná chyba u 10% mutace je cca 10 % a snižuje se postupně až na průměrnou chybu 5% u 100 % mutace. Mutace dle algoritmu pomáhá lepšímu prozkoumání různých řešení. Jde vidět, že podobně se snižuje i maximální chyba z cca 45 % u 10% mutace na cca 22% chybu u 100 % mutace.
+
+image:error_mutation.png[]
+
+Z grafu níže je vidět, že algoritmus je nejméně časově náročný u 40% mutace, avšak rozdíly jsou velmi malé.
+
+image:time_mutation.png[]
+
+=== Závislost na počtu generací
+
+Pro toto měření byla nastavena velikost populace na 200,pravděpodobnost křížení na 25 % a pravděpodobnost mutace na 10 %.
+
+Z grafu níže je vidět, že relativní chyba se snižuje z cca 15 % u 5 generací na 10 % u 40 generací. Relativní chyba je naopak nejlepší okolo 25 generací.
+
+image:error_gen.png[]
+
+Z grafu níže je vidět, že nejméně časově náročný je algoritmus u 5 generací a postupně se zvyšuje náročnost až do 25 generací, kde od tohoto bodu se pro měřené instance časová náročnost nezvyšuje.
+
+image:time_gen.png[]
 
 == Závěr
 
-Z naměřených dat, jak je vidět z grafů, lze usoudit, že výpočetní složitost metod bf, bnb ani dyn nejsou závislé na změně parametru maximální váhy. To je očekávané chování vůči znalosti jak algoritmy fungují.
+Byl implementován algoritmus genetického programování pro problém batohu a byly prozkoumány závislosti výsledků algoritmu na změně parametrů počtu generací a pravděpodobnosti křížení a mutace.
 
-Z grafů jde vidět, že výpočetní složitost metody dynamického programování je závislá na parametru maximální ceny. To souhlasí se stanoveným předpokladem, jelikož doba běhu algoritmu je přímo závislá na velikosti vyplňované tabulky. U metody hrubou silou a větví a hranic žádnou závislost na tomto parametru nepozoruji.
-
-Při zkoumání závislosti výpočetní složitosti na parametru poměru kapacity batohu k sumární váze vidíme, že metoda větví a hranic je na tomto parametru závislá; dle předpokladu. Pro poměru kapacity a sumární váhy okolo hodnoty 0.4 je tento algoritmus nejpomalejší. Naopak s čím vyšší či čím nižší hodnotou se algoritmus zrychluje. To je způsobené právě vlivem ořezávání. U metod hrubou silou a dynamického programování žádnou závislost na tomto parametru nepozoruji.
-
-Z grafů závislosti výpočetní složitosti na parametru korelace s váhou bylo zjištěno, že metody větví a hranic pro menší i silnou korelací s váhou pomalejší vyhodnocování. Dle měření se konstantně složitost zvýšila. U metody dynamického programování je pro silnou korelaci s váhou lehce pomalejší vyhodnocování.
-
-Dle měření granularity zřejmě žádná výrazná závislost u metod hrubou silou, větví a hranic a dynamického programování není. Zdá se ale, že u všech metod je lehce pomalejší vyhodnocení při převaze lehkých či těžkých věcí. U metody dynamického programování je výpočet lehce pomalejší pro hodnotu exponentu kolem bodu 2.0, pro převahu lehkých i těžkých věcí. Pro metodu větví a hranic je výpočet lehce pomalejší kolem bodu 2.0 pro převahu těžkých věcí. Dle měření však nejde předpokládat obecně platná závislost.
-
-Z meření relativní chyby heuristiky pro případ zkoumání parametru poměru kapacity batohu k sumární váze vyplývá, že chyba heuristiky klesá při vyšších hodnotách poměru. Pro nízké hodnoty může relativní chyba dosahovat hodnot okolo 35 %, proto pro ně není metoda vhodná. Naopak pro poměr nad 50 % má metoda relativní chybu zhruba pod 10 % a dále klesá pro vyšší hodnoty poměru. Pro vyšší hodnoty poměru je tedy metoda vhodná.
-
-Z měření relativní chyby heuristiky pro případ zkoumání parametru exponentu granuality vidíme, že chyba mírně roste při vyšší granualitě, tedy při menším počtu malých věcí.
-
-Z naměřených dat a dle jejich grafů nám tedy vyplývá, že metoda hrubé síly není závislá na parametrech (kromě počtů věcí v instanci), ale je nejpomalejší a tedy vhodná jen pro malé instance. Metoda větví a hranic je rychlá pro malé nebo velké poměry kapacity batoku k sumární váze. Metoda dynamického programování je rychlá, ale je závislá na váze předmětů a svou implementací spotřebovává velké množství paměti. Metoda je tedy vhodná zejména pro batohy s nízkými cenami. Heuristika je nejrychlejší metoda, avšak u speciálních batohů je možnost větších chyb. Metoda je nejvhodnější pro batohy s poměrem kapacity batohu k sumární váze blížící se hodnotě 1.
+Algoritmus je pomalejší než algoritmus dynamického programování, oproti kterému byla testována relativní chyba. Tento algoritmus je ale univerzálnější a snadnější na implementaci.
