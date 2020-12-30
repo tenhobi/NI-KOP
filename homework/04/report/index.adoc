@@ -1,4 +1,4 @@
-= NI-KOP, 3. úkol
+= NI-KOP, 4. úkol
 
 Jan Bittner (bittnja3)
 
@@ -20,128 +20,17 @@ Na zachycení aktuálního času bylo využito `std::chrono::high_resolution_clo
 
 Testování bylo provedeno na *Legion 5 15ARH05H*. Stroj obsahuje CPU *AMD Ryzen 7 4800H @ 2.90 GHz* a RAM *DDR4 16.00 GB*.
 
-== Řešení
+== Rozbor možných variant řešení
 
-Nejprve jsem prozkoumal citlivost metod na parametry generovaných instancí. Řešení metodou hrubé síly, větví a hranic a dynamického programování jsou exaktní metody, a tedy vždy najdou optimální řešení. Je tedy vhodné zkoumat závislost na výpočetním času .U heuristiky je vhodné zkoumat závislost na kvalitě / relativní chybě.
+== Rámcový popis postupu řešení
 
-=== Hrubé síly
-
-Řešení metodou hrubou silou (_bf_) je řešeno rekurzí a prochází vždy všechny možné stavy stavového prostoru. Díky tomu může být výpočetní náročnost závislá pouze na _velikosti instance_.
-
-=== Metoda větví a hranic
-
-Řešení metodou větví a hranic (_bnb_) je řešeno ořezáváním zespoda (další větve nepřinesou lepší výsledek) a zezhora (další věci přeplní batoh). Díky tomu lze předpokládat, že bude tato metoda citlivá na _poměr kapacity batohu k sumární váze_ a _granulitě_.
-
-=== Metoda dynamického programování
-
-Metoda dynamického programování (_dyn_) je řešena pamatováním si již vypočítaných hodnot dekompozicí podle ceny. Díky tomu lze předpokládat že metoda bude záviset na parametru _maximální ceny_.
-
-=== Heuristika
-
-Heuristika je řešena vytvořením kopií dat s hodnotou `cena/hmotnost`  a následným seřazením. Z seřazeného pole se poté postupně přidávají položky do výběru, pokud nějaká položka nesplňuje podmínky (vejde se do batohu), přeskočí se.
-
-Pro tuto metodu je vhodné zkoumat kvalitu. Předpokladem je závislost na _poměru kapacity batohu k sumární váze_.
+== Popis kostry algoritmu
 
 == Naměřené výsledky
 
+1. mutation 10, cross 35 (200)
+
 === Parametr maximální váhy
-
-- Počet věcí: 15
-- Počet instancí: 200
-- Poměr kapacity batohu k sumární váze: 0.8
-- *Max. váha: 100--1000*
-- Max. cena: 500
-- Exponent granularity: 1
-
-[.text-center]
-image:weight_bf.png[]
-image:weight_bnb.png[]
-image:weight_dyn.png[]
-
-=== Parametr maximální ceny
-
-- Počet věcí: 15
-- Počet instancí: 200
-- Poměr kapacity batohu k sumární váze: 0.8
-- Max. váha: 500
-- *Max. cena: 100--1000*
-- Exponent granularity: 1
-
-[.text-center]
-image:cost_bf.png[]
-image:cost_bnb.png[]
-image:cost_dyn.png[]
-
-=== Parametr poměru kapacity batohu k sumární váze
-
-- Počet věcí: 15
-- Počet instancí: 200
-- Poměr kapacity batohu k sumární váze: 0.8
-- *Poměr kapacity batohu k sumární váze: 0.1--1.0*
-- Max. váha: 500
-- Max. cena: 500
-- Exponent granularity: 1
-
-[.text-center]
-image:capsum_bf.png[]
-image:capsum_bnb.png[]
-image:capsum_dyn.png[]
-
-=== Parametr korelace s váhou
-
-- Počet věcí: 15
-- Počet instancí: 200
-- Poměr kapacity batohu k sumární váze: 0.8
-- *Max. váha: 100--1000*
-- Max. cena: 500
-- *Korelace s váhou: uni | corr | strong*
-- Exponent granularity: 1
-
-[.text-center]
-image:corr_bf.png[]
-image:corr_bnb.png[]
-image:corr_dyn.png[]
-
-=== Parametr exponentu granularity
-
-- Počet věcí: 15
-- Počet instancí: 200
-- Poměr kapacity batohu k sumární váze: 0.8
-- Max. váha: 500
-- Max. cena: 500
-- *Převaha věcí: bal | light | heavy*
-- *Exponent granularity: -5--5*
-
-[.text-center]
-image:gran_bf.png[]
-image:gran_bnb.png[]
-image:gran_dyn.png[]
-
-=== Parametr poměru kapacity batohu k sumární váze: relativní chyba heuristiky
-
-- Počet věcí: 15
-- Počet instancí: 200
-- Poměr kapacity batohu k sumární váze: 0.8
-- *Poměr kapacity batohu k sumární váze: 0.1--1.0*
-- Max. váha: 500
-- Max. cena: 500
-- Exponent granularity: 1
-
-[.text-center]
-image:heur_capsum.png[]
-
-=== Parametr exponentu granularity: relativní chyba heuristiky
-
-- Počet věcí: 15
-- Počet instancí: 200
-- Poměr kapacity batohu k sumární váze: 0.8
-- Max. váha: 500
-- Max. cena: 500
-- *Převaha věcí: light | heavy*
-- *Exponent granularity: 0 0.2 0.5 0.7 1 2 5*
-
-[.text-center]
-image:heur_gran.png[]
 
 == Závěr
 

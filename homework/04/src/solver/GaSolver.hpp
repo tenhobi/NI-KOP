@@ -11,10 +11,10 @@
 #include "Solver.hpp"
 
 #define POPULATION_COUNT 200
-#define GENERATIONS_COUNT_MAX 100
+#define GENERATIONS_COUNT_MAX 35
 #define GENERATIONS_UNCHANGED 15
-#define PROBABILITY_MUTATION 100 // percent
-#define PROBABILITY_CROSS 35 // percent
+#define PROBABILITY_MUTATION 10 // percent
+#define PROBABILITY_CROSS 25 // percent
 
 struct ChromosomeCompare {
     bool operator()(const Chromosome *l, const Chromosome *r) {
@@ -63,7 +63,7 @@ protected:
         }
 
 
-        std::cout << "last max cost = " << this->lastMaxCost << std::endl;
+        std::cout << this->lastMaxCost << std::endl;
     }
 
     void _initFirstGeneration() {
@@ -115,6 +115,9 @@ protected:
         std::sort(thisGeneration.begin(), thisGeneration.end(), ChromosomeCompare());
 //        std::cout << thisGeneration.size() << std::endl;
 //        std::cout << generationsSinceMaxFitnessChanged << std::endl;
+        for (int i = POPULATION_COUNT; i < (int) thisGeneration.size(); i++) {
+            delete thisGeneration[i];
+        }
         thisGeneration.resize(POPULATION_COUNT);
         this->chromosomes = thisGeneration;
     }
