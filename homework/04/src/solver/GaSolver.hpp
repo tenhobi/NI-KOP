@@ -5,17 +5,27 @@
 #include <utility>
 #include <string>
 #include <climits>
+#include <algorithm>
 
 #include "../Chromosome.hpp"
 #include "Solver.hpp"
 
 #define POPULATION_COUNT 200
-#define PROBABILITY_MUTATION 5 // percent
-#define PROBABILITY_CROSS 25 // percent
+#define GENERATIONS_COUNT_MAX 100
+#define GENERATIONS_UNCHANGED 15
+#define PROBABILITY_MUTATION 100 // percent
+#define PROBABILITY_CROSS 35 // percent
+
+struct ChromosomeCompare {
+    bool operator()(const Chromosome *l, const Chromosome *r) {
+        return l->fitness > r->fitness;
+    }
+};
 
 class GaSolver : public Solver {
 public:
-    explicit GaSolver(Bag &bag) : Solver(bag) {}
+    explicit GaSolver(Bag &bag) : Solver(bag), generationCount(0), lastMaxCost(0),
+                                  generationsSinceMaxFitnessChanged(0) {}
 
     void solve() override {
         solveGa();
@@ -34,136 +44,91 @@ public:
 
 protected:
     std::vector<Chromosome *> chromosomes;
+    int generationCount;
+    unsigned long lastMaxCost;
+    int generationsSinceMaxFitnessChanged;
 
     void solveGa() {
         // TODO
         // - přidat počáteční chromozomy
-        // - vyřadit nevhodné
+        _initFirstGeneration();
         // --- for 1..x:
+
+        while (this->generationCount <= GENERATIONS_COUNT_MAX) {
+            if (this->lastMaxCost != 0 && this->generationsSinceMaxFitnessChanged > GENERATIONS_UNCHANGED) {
+                break;
+            }
+
+            _createNextGeneration();
+        }
+
+
+        std::cout << "last max cost = " << this->lastMaxCost << std::endl;
+    }
+
+    void _initFirstGeneration() {
+        for (int i = 0; i < POPULATION_COUNT; i++) {
+            this->chromosomes.push_back(new Chromosome(bag));
+        }
+        this->chromosomes.push_back(new Chromosome(bag, std::vector<int>(bag.items.size(), 0)));
+        this->chromosomes.push_back(new Chromosome(bag, std::vector<int>(bag.items.size(), 1)));
+
+        std::sort(this->chromosomes.begin(), this->chromosomes.end(), ChromosomeCompare());
+
+//        for (auto & chromosome : this->chromosomes) {
+//            toText(chromosome);
+//        }
+    }
+
+    void _createNextGeneration() {
+        this->generationCount++;
+        //std::cout << "generation " << this->generationCount << std::endl;
+
+        if (this->lastMaxCost == this->chromosomes[0]->fitness) {
+            this->generationsSinceMaxFitnessChanged++;
+        } else {
+            this->generationsSinceMaxFitnessChanged = 1;
+        }
+
+        this->lastMaxCost = this->chromosomes[0]->fitness;
+        //std::cout << this->lastMaxCost << std::endl;
+
+        // last generation
+        std::vector<Chromosome *> thisGeneration = this->chromosomes;
+
         // - mutace, křížení
-        // - vyhodit nevhodné
-        // - vybrat nejlepší
+        for (auto &chromosome : this->chromosomes) {
+            int shouldCross = rand() % 100;
+            if (shouldCross <= PROBABILITY_CROSS) {
+                for (auto &secondChromosome : this->chromosomes) {
+                    thisGeneration.push_back(chromosome->cross(secondChromosome));
+                }
+            }
 
-        Chromosome *a = new Chromosome(bag);
-        Chromosome *b = new Chromosome(bag);
+            int shouldMute = rand() % 100;
+            if (shouldMute <= PROBABILITY_MUTATION) {
+                thisGeneration.push_back(chromosome->mutate());
+            }
+        }
 
-        toText(a);
-        toText(b);
-        toText(a->cross(b));
-        toText(a->cross(b));
-        toText(b->cross(a));
-        toText(b->cross(a));
-        std::cout << a->fitness << std::endl;
-        std::cout << b->fitness << std::endl;
+        // - sort + vyhodit nevhodné
+        std::sort(thisGeneration.begin(), thisGeneration.end(), ChromosomeCompare());
+//        std::cout << thisGeneration.size() << std::endl;
+//        std::cout << generationsSinceMaxFitnessChanged << std::endl;
+        thisGeneration.resize(POPULATION_COUNT);
+        this->chromosomes = thisGeneration;
     }
 
     // TODO: remove
     static void toText(Chromosome *chromosome) {
+        std::cout << chromosome->fitness << " = ";
+
         for (auto &&item : chromosome->genes) {
             std::cout << item;
         }
 
         std::cout << std::endl;
     }
-
-    void createNewGeneration() {
-
-    }
-
-//    void solveDyn() {
-//        // == number of items
-//        unsigned long totalColumns = bag.items.size();
-//        // == max possible cost
-//        unsigned long totalRows = 1; // + "0"
-//        unsigned long weight = 0;
-//        unsigned long cost = 0;
-//
-//        for (auto &item : bag.items) {
-//            totalRows += item.getCost();
-//        }
-//
-//        // Create table
-//        // table[ i * (totalRows) + j] == "table[i][j]" == "table[row][column]"
-//        auto *table = new unsigned long[totalRows * totalColumns];
-//        // auto **table = new unsigned long*[totalRows];
-//
-//        // Fill w/ dummy values
-//        std::fill(table, table + totalRows * totalColumns, ULONG_MAX);
-//
-//        // w/ first item
-//        if (bag.items[0].getCost() != 0) {
-//            table[bag.items[0].getCost()] = bag.items[0].getWeight();
-//        }
-//        // w/o first item
-//        table[0] = 0;
-//
-//        // CALCULATE
-//
-//        // Starts at 1 'cause 0 is trivially done above
-//        for (unsigned long column = 1; column < totalColumns; column++) {
-//            unsigned long previousColumn = column - 1;
-//            unsigned long columnWeight = bag.items[column].getWeight();
-//            unsigned long columnCost = bag.items[column].getCost();
-//
-//            for (unsigned long row = 0; row < totalRows; row++) {
-//                // Duplicate "left" item
-//                table[column * totalRows + row] = table[previousColumn * totalRows + row];
-//
-//                // Compare "left bottom" item
-//                if (bag.items[column].getCost() <= row
-//                    && table[previousColumn * totalRows + row - columnCost] != ULONG_MAX
-//                    && table[previousColumn * totalRows + row - columnCost] + columnWeight <
-//                       table[column * totalRows + row]
-//                        ) {
-//                    table[column * totalRows + row] =
-//                            table[previousColumn * totalRows + row - columnCost] + columnWeight;
-//                }
-//            }
-//        }
-//
-//        itemsFlag = std::vector<bool>();
-//        for (auto &item : bag.items) {
-//            std::ignore = item;
-//            itemsFlag.push_back(false);
-//        }
-//
-//        // RESULT
-//
-//        unsigned long lastColumn = totalColumns - 1;
-//
-//        for (unsigned long i = totalRows - 1; i >= 0; i--) {
-//            if (bag.capacity >= table[lastColumn * totalRows + i]) {
-//                weight = table[lastColumn * totalRows + i];
-//                cost = i;
-//                break;
-//            }
-//        }
-//
-//        // ITEMS USED
-//
-//        unsigned long tmp = cost;
-//
-//        for (unsigned long i = totalColumns - 1; i >= 0; i--) {
-//            if (i != 0
-//                && table[(i - 1) * totalRows + tmp] != table[i * totalRows + tmp]
-//                    ) {
-//                tmp -= bag.items[i].getCost();
-//                itemsFlag[i] = true;
-//            }
-//
-//            if (i == 0) {
-//                if (tmp != 0) {
-//                    itemsFlag[0] = true;
-//                }
-//                break;
-//            }
-//        }
-//
-//        delete[] table;
-//        resultCost = cost;
-//        resultWeight = weight;
-//    }
 };
-
 
 #endif //INC_01_GASOLVER_HPP

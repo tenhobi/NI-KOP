@@ -10,7 +10,7 @@
 #include "Bag.hpp"
 
 #define FITNESS_PENALTY 100000
-#define INITIAL_ITEM_PROBABILITY 30 // percent
+#define INITIAL_ITEM_PROBABILITY 40 // percent
 
 class Chromosome {
 public:
@@ -20,16 +20,18 @@ public:
 
         // Use some configuration from average bag's item cost.
         unsigned long averageCost = 0;
-        for (auto&& item: this->bag.items) {
+        for (auto &&item: this->bag.items) {
             averageCost += item.getCost() / this->bag.items.size();
         }
 
+        unsigned long sumCost = 0;
         // Add only items better than average with some probability.
         for (int i = 0; i < (int) this->bag.items.size(); i++) {
             int shouldAdd = rand() % 100;
 
-            if (this->bag.items[i].getCost() >= averageCost && shouldAdd >= INITIAL_ITEM_PROBABILITY) {
+            if (this->bag.items[i].getCost() >= (averageCost / 2) && shouldAdd >= INITIAL_ITEM_PROBABILITY && (sumCost + this->bag.items[i].getCost()) <= this->bag.capacity) {
                 this->genes.push_back(1);
+                shouldAdd += this->bag.items[i].getCost();
             } else {
                 this->genes.push_back(0);
             }
@@ -51,7 +53,6 @@ public:
 
     Chromosome *mutate() {
         int geneToMutate = rand() % genes.size(); // 0 .. size-1
-        printf("random mutate: %d\n", geneToMutate);
 
         std::vector<int> tmpGenes = genes; // TODO ?
 
@@ -62,7 +63,6 @@ public:
 
     Chromosome *cross(Chromosome *other) {
         int crossPoint = rand() % genes.size(); // 0 .. size-1
-        printf("random cross point: %d\n", crossPoint);
 
         std::vector<int> tmpGenes = genes; // Copy first part (this) chromosome. TODO ?
 
@@ -80,7 +80,7 @@ public:
 
         for (int i = 0; i < (int) this->genes.size(); i++) {
             if (this->genes[i] != 0) {
-                auto& item = this->bag.items[i];
+                auto &item = this->bag.items[i];
                 sumWeight += item.getWeight();
                 sumCost += item.getCost();
             }
@@ -89,8 +89,13 @@ public:
         this->fitness = sumCost;
 
         if (sumWeight > this->bag.capacity) {
-            this->fitness -= FITNESS_PENALTY;
+            this->fitness = 0;
         }
+    }
+
+    bool operator<(const Chromosome& chromosome) const
+    {
+        return this->fitness < chromosome.fitness;
     }
 };
 
