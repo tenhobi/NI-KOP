@@ -50,7 +50,7 @@ public:
                                          mutationProbability(mutationProbability),
                                          crossoverProbability(crossoverProbability) {}
 
-    Chromosome& solve() {
+    Chromosome &solve() {
         solveGa();
 
         return this->chromosomes[0];
@@ -91,6 +91,7 @@ protected:
             thisGeneration.push_back(this->chromosomes[i]);
         }
 
+        // Selection
         for (int i = this->elitismSize; i < this->populationCount; i++) {
             Chromosome next;
 
@@ -113,19 +114,17 @@ protected:
         this->chromosomes = thisGeneration;
     }
 
-    Chromosome &select() {
+    // Selection using tournament.
+    Chromosome select() {
+        std::vector<Chromosome> tournament;
 
-    }
-
-    // TODO: remove
-    static void toText(Chromosome *chromosome) {
-        std::cout << chromosome->fitness << " = ";
-
-        for (auto &&item : chromosome->genes) {
-            std::cout << item;
+        for (int i = 0; i < this->tournamentSize; i++) {
+            tournament.push_back(this->chromosomes[rand() % (int) this->chromosomes.size()]);
         }
 
-        std::cout << std::endl;
+        std::sort(tournament.begin(), tournament.end()); // TODO
+
+        return tournament[0];
     }
 };
 

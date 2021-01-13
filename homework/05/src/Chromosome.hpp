@@ -22,7 +22,7 @@ public:
     Chromosome() = default;
 
     // For initial population, generate chromosome.
-    explicit Chromosome(Formula &formula) : formula(formula) {
+    explicit Chromosome(Formula formula) : formula(std::move(formula)) {
         this->genes = std::vector<bool>();
 
         for (int i = 0; i < (int) this->formula.weights.size(); i++) {
@@ -34,8 +34,8 @@ public:
     }
 
     // For mutations and crossing.
-    Chromosome(Formula &formula, std::vector<bool> genes) :
-            formula(formula),
+    Chromosome(Formula formula, std::vector<bool> genes) :
+            formula(std::move(formula)),
             genes(std::move(genes)) {
         this->fitness = calculateFitness();
     }
@@ -50,7 +50,7 @@ public:
         return Chromosome(formula, tmpGenes);
     }
 
-    Chromosome cross(Chromosome &other) {
+    Chromosome cross(const Chromosome &other) const {
         int crossPoint = rand() % genes.size(); // 0 .. size-1
 
         std::vector<bool> tmpGenes = genes;
