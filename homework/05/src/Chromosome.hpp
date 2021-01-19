@@ -9,7 +9,7 @@
 
 #include "SAT/Formula.hpp"
 
-#define FITNESS_PENALTY -100
+#define FITNESS_PENALTY -10
 #define INITIAL_ITEM_PROBABILITY 40 // percent
 
 class Chromosome {
@@ -63,30 +63,36 @@ public:
         return Chromosome(formula, tmpGenes);
     }
 
-    unsigned long calculateFitness() {
-        unsigned long sumWeight = 0;
-
-        auto pair = this->formula.evaluate(this->genes);
-        bool evaluated = pair.first;
-        int evaluatedClausesCount = pair.second;
+    long calculateFitness() {
+        bool evaluated;
+        int evaluatedClausesCount;
+        std::tie (evaluated, evaluatedClausesCount) = this->formula.evaluate(this->genes);
 
         // Fitness is sum weight of used genes.
         if (evaluated) {
-            for (int i = 0; i < (int) this->genes.size(); i++) {
+            long weightSum = 0;
+            for (int i = 0; i < (int) this->formula.weights.size(); i++) {
                 if (this->genes[i]) {
-                    sumWeight += this->formula.weights[i];
+                    weightSum += this->formula.weights[i];
                 }
             }
-
-            return sumWeight;
+            return weightSum;
         }
 
         // Else fitness is number of not evaluated clauses * FITNESS_PENALTY.
-        return (this->formula.clauses.size() - evaluatedClausesCount) * FITNESS_PENALTY;
+        return ((int) this->formula.clauses.size() - evaluatedClausesCount) * FITNESS_PENALTY;
     }
 
     bool operator<(const Chromosome &chromosome) const {
         return this->fitness < chromosome.fitness;
+    }
+
+    void toString() const {
+        for (auto gene: this->genes) {
+            std::cout << gene << " ";
+        }
+
+        std::cout << std::endl;
     }
 };
 

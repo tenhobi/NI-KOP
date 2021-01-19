@@ -15,12 +15,14 @@ public:
     Formula() = default;
 
     explicit Formula(std::string id,
-                     std::vector<int> weights) : id(std::move(id)),
-                                                 weights(std::move(weights)) {}
+                     std::vector<int> weights,
+                     std::vector<Clause> clauses) : id(std::move(id)),
+                                                    weights(std::move(weights)),
+                                                    clauses(std::move(clauses)) {}
 
     std::pair<bool, int> evaluate(const std::vector<bool> &variables) const {
-        int evaluatedClausesCount = 0;
         bool valueFlag = true;
+        int evaluatedClausesCount = 0;
 
         for (Clause clause: this->clauses) {
             bool value = clause.evaluate(variables);
@@ -32,6 +34,20 @@ public:
         }
 
         return {valueFlag, evaluatedClausesCount};
+    }
+
+    void toString() const {
+        std::cout << "id: " << id << ", weights:";
+
+        for (auto weight: this->weights) {
+            std::cout << " " << weight;
+        }
+
+        std::cout << std::endl;
+
+        for (const auto &clause: this->clauses) {
+            clause.toString();
+        }
     }
 };
 
