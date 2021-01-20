@@ -10,7 +10,7 @@
 #include "SAT/Formula.hpp"
 #include "Chromosome.hpp"
 
-#define RESET_THRESHOLD 30
+#define RESET_THRESHOLD 20
 #define BEST_THRESHOLD 30
 
 class GaSolver {
@@ -31,7 +31,6 @@ private:
     std::vector<Chromosome> chromosomes;
     long lastBestFitness = 0;
     int generationsUnchanged = 0;
-    bool cannotFindBetter = false;
 
 public:
     GaSolver(Formula formula,
@@ -58,29 +57,22 @@ public:
 
 protected:
     void solveGa() {
-        // TODO
-        // - přidat počáteční chromozomy
         _initFirstGeneration();
-        // --- for 1..x:
-
-        while (!cannotFindBetter && this->generationsCount <= this->maxGenerationsCount) {
+        while (this->generationsCount <= this->maxGenerationsCount) {
             _createNextGeneration();
         }
-
-
-//        std::cout << this->lastMaxCost << std::endl;
     }
 
     void _initFirstGeneration() {
         this->chromosomes = {};
 
-        for (int i = 0; i < this->initialPopulationCount; i++) {
+        for (int i = 0; i < this->initialPopulationCount - 2; i++) {
             this->chromosomes.emplace_back(this->formula);
         }
 
-//         All false and all true.
-//        this->chromosomes.emplace_back(this->formula, std::vector<bool>(this->formula.weights.size(), false));
-//        this->chromosomes.emplace_back(this->formula, std::vector<bool>(this->formula.weights.size(), true));
+        // All false and all true.
+        this->chromosomes.emplace_back(this->formula, std::vector<bool>(this->formula.weights.size(), false));
+        this->chromosomes.emplace_back(this->formula, std::vector<bool>(this->formula.weights.size(), true));
     }
 
     void _createNextGeneration() {
@@ -100,19 +92,29 @@ protected:
 
         // Resetting if stuck mechanism.
         if (this->generationsUnchanged == RESET_THRESHOLD && this->chromosomes[0].notEvaluated > 0) {
+            this->generationsUnchanged = 0;
             std::cout << "RESETTING" << std::endl;
             this->_initFirstGeneration();
-            std::sort(this->chromosomes.begin(), this->chromosomes.end());
+            return;
         }
 
         // Cannot find better solution.
         if (this->generationsUnchanged == BEST_THRESHOLD && this->chromosomes[0].notEvaluated == 0) {
             std::cout << "BEST I CAN FOUND" << std::endl;
-            this->cannotFindBetter = true;
+            this->generationsUnchanged = 0;
+
+            std::vector<Chromosome> thisGeneration;
+            thisGeneration.push_back(this->chromosomes[0]);
+            for (int i = 1; i < this->populationCount; i++) {
+                thisGeneration.emplace_back(this->formula);
+            }
+            this->chromosomes = thisGeneration;
+
             return;
         }
 
-        std::cout << this->chromosomes[0].fitness << ", " << this->chromosomes[0].notEvaluated << ", "
+        std::cout << this->chromosomes[0].fitness << ", " << this->chromosomes[1].fitness << ", "
+                  << this->chromosomes[2].fitness << ", " << this->chromosomes[0].notEvaluated << ", "
                   << this->chromosomes[0].weight << std::endl;
 
         // START NEW GENERATION:
@@ -136,27 +138,35 @@ protected:
     }
 
     void normalGA(std::vector<Chromosome> &thisGeneration) {
-        Chromosome next = this->select();
+        Chromosome parent1 = this->select();
+        Chromosome parent2 = this->select();
+        Chromosome child1 = parent1;
+        Chromosome child2 = parent2;
 
         // Crossover
         if (rand() % 100 < this->crossoverProbability) {
-            Chromosome parent2 = this->select();
-            next = next.cross(parent2);
+            std::tie(child1, child2) = Chromosome::cross(parent1, parent2);
         }
 
-        // Mutation
+        // Mutation for child 1.
         if (rand() % 100 < this->mutationProbability) {
-            next = next.mutate();
+            child1 = child1.mutate();
         }
 
-        thisGeneration.push_back(next);
+        // Mutation for child 2
+        if (rand() % 100 < this->mutationProbability) {
+            child2 = child2.mutate();
+        }
+
+        thisGeneration.push_back(child1);
+        thisGeneration.push_back(child2);
     }
 
     void GAwithDeterministicCrowding(std::vector<Chromosome> &thisGeneration) {
         Chromosome parent1 = this->select();
         Chromosome parent2 = this->select();
-        Chromosome child1 = parent1.cross(parent2);
-        Chromosome child2 = parent1.cross(parent1);
+        Chromosome child1, child2;
+        std::tie(child1, child2) = Chromosome::cross(parent1, parent2);
 
         // Mutation for child 1
         if (rand() % 100 < this->mutationProbability) {
@@ -168,8 +178,8 @@ protected:
             child2 = child2.mutate();
         }
 
-        if (distance(parent1, child1) + distance(parent2, child2) <=
-            distance(parent1, child2) + distance(parent2, child1)) {
+        if (Chromosome::distance(parent1, child1) + Chromosome::distance(parent2, child2) <=
+            Chromosome::distance(parent1, child2) + Chromosome::distance(parent2, child1)) {
             if (child1.fitness > parent1.fitness) {
                 thisGeneration.push_back(child1);
             } else {
@@ -194,10 +204,6 @@ protected:
         }
     }
 
-    int distance(Chromosome &first, Chromosome &second) {
-        return first.distance(second);
-    }
-
     // Selection using tournament.
     Chromosome select() {
         return this->selectTournament();
@@ -212,6 +218,7 @@ protected:
     Chromosome selectTournament() {
         std::vector<Chromosome> tournament;
 
+        tournament.reserve(this->tournamentSize);
         for (int i = 0; i < this->tournamentSize; i++) {
             tournament.push_back(this->chromosomes[rand() % (int) this->chromosomes.size()]);
         }
