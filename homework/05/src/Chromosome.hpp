@@ -9,16 +9,18 @@
 
 #include "SAT/Formula.hpp"
 
-#define FITNESS_PENALTY -10
-#define INITIAL_ITEM_PROBABILITY 40 // percent
+#define FITNESS_PENALTY 1500
 
 class Chromosome {
 private:
     Formula formula;
     std::vector<bool> genes;
-    unsigned long fitness = 0;
 
 public:
+    long fitness = 0;
+    long weight = 0;
+    long notEvaluated = 0;
+
     Chromosome() = default;
 
     // For initial population, generate chromosome.
@@ -26,10 +28,11 @@ public:
         this->genes = std::vector<bool>();
 
         for (int i = 0; i < (int) this->formula.weights.size(); i++) {
-            int shouldAdd = rand() % 100;
-            this->genes.push_back(shouldAdd < INITIAL_ITEM_PROBABILITY);
+            int shouldAdd = rand() % 2;
+            this->genes.push_back(shouldAdd == 1);
         }
 
+        this->weight = calculateWeight();
         this->fitness = calculateFitness();
     }
 
@@ -37,6 +40,7 @@ public:
     Chromosome(Formula formula, std::vector<bool> genes) :
             formula(std::move(formula)),
             genes(std::move(genes)) {
+        this->weight = calculateWeight();
         this->fitness = calculateFitness();
     }
 
@@ -63,38 +67,49 @@ public:
         return Chromosome(formula, tmpGenes);
     }
 
-    long calculateFitness() {
-        bool evaluated;
-        int evaluatedClausesCount;
-        std::tie (evaluated, evaluatedClausesCount) = this->formula.evaluate(this->genes);
-
-        // Fitness is sum weight of used genes.
-        if (evaluated) {
-            long weightSum = 0;
-            for (int i = 0; i < (int) this->formula.weights.size(); i++) {
-                if (this->genes[i]) {
-                    weightSum += this->formula.weights[i];
-                }
-            }
-            return weightSum;
+    int distance(const Chromosome &other) const {
+        int sum = 0;
+        for (int i = 0; i < (int) this->genes.size(); i++) {
+            sum += this->genes[i] == other.genes[i] ? 0 : 1;
         }
-
-        // Else fitness is number of not evaluated clauses * FITNESS_PENALTY.
-        return ((int) this->formula.clauses.size() - evaluatedClausesCount) * FITNESS_PENALTY;
+        return sum;
     }
 
     bool operator<(const Chromosome &chromosome) const {
-        return this->fitness < chromosome.fitness;
+        return this->fitness > chromosome.fitness;
     }
 
     void toString() const {
+        std::cout << this->fitness << " = ";
+
         for (auto gene: this->genes) {
             std::cout << gene << " ";
         }
 
         std::cout << std::endl;
     }
-};
 
+private:
+
+    long calculateWeight() {
+        long weightSum = 0;
+        for (int i = 0; i < (int) this->formula.weights.size(); i++) {
+            if (this->genes[i]) {
+                weightSum += this->formula.weights[i];
+            }
+        }
+
+        return weightSum;
+    }
+
+    long calculateFitness() {
+        bool evaluated;
+        int evaluatedClausesCount;
+        std::tie(evaluated, evaluatedClausesCount) = this->formula.evaluate(this->genes);
+
+        this->notEvaluated = (int) this->formula.clauses.size() - evaluatedClausesCount;
+        return this->weight - ((int) this->formula.clauses.size() - evaluatedClausesCount) * FITNESS_PENALTY;
+    }
+};
 
 #endif //INC_01_CHROMOSOME_HPP

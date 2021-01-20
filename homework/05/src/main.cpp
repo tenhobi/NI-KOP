@@ -28,34 +28,40 @@ int main(int argc, char **argv) {
 
     Loader loader = Loader(argv[1]);
     Formula formula = loader.loadFormula();
+
+    GaSolver solver = GaSolver(formula,
+                               INITIAL_POPULATION_COUNT,
+                               POPULATION_COUNT,
+                               MAX_GENERATIONS_COUNT,
+                               TOURNAMENT_SIZE,
+                               ELITISM,
+                               MUTATION_PROBABILITY,
+                               CROSSOVER_PROBABILITY);
+    Chromosome result = solver.solve();
+    result.toString();
+    std::cout << result.fitness << std::endl;
+
 //    formula.toString();
     // uf20-01 6403
     // 1 2 3 4 -5
     // 6 7 8 9 10
     // 11 12 -13 14 -15
     // 16 17 18 19 20
-    std::vector<bool> vars = {
-            true, true, true, true, false,
-            true, true, true, true, true,
-            true, true, false, true, false,
-            true, true, true, true, true};
-    Chromosome chromosome;
-    chromosome = Chromosome(formula, vars);
-    chromosome.toString();
-    Chromosome b = chromosome.mutate();
-    b.toString();
-    std::cout << chromosome.calculateFitness() << std::endl;
-    std::cout << b.calculateFitness() << std::endl;
+//    std::vector<bool> vars = {
+//            true, true, true, true, false,
+//            true, true, true, true, true,
+//            true, true, false, true, false,
+//            true, true, true, true, true};
+//    Chromosome chromosome;
+//    chromosome = Chromosome(formula, vars);
+//    chromosome.toString();
+//    Chromosome b = chromosome.mutate();
+//    b.toString();
+//    std::cout << chromosome.calculateFitness() << std::endl;
+//    std::cout << b.calculateFitness() << std::endl;
 //    std::cout << chromosome.calculateFitness() << std::endl;
 
-//    GaSolver solver = GaSolver(formula,
-//                               INITIAL_POPULATION_COUNT,
-//                               POPULATION_COUNT,
-//                               MAX_GENERATIONS_COUNT,
-//                               TOURNAMENT_SIZE,
-//                               ELITISM,
-//                               MUTATION_PROBABILITY,
-//                               CROSSOVER_PROBABILITY);
+
 //
 //    // TIMER START
 //    auto start = std::chrono::high_resolution_clock::now();
