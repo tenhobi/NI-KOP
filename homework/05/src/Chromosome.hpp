@@ -9,8 +9,6 @@
 
 #include "SAT/Formula.hpp"
 
-#define FITNESS_PENALTY 1500
-
 class Chromosome {
 private:
     Formula formula;
@@ -55,6 +53,10 @@ public:
     }
 
     static std::pair<Chromosome, Chromosome> cross(const Chromosome &first, const Chromosome &second) {
+        return crossUniform(first, second);
+    }
+
+    static std::pair<Chromosome, Chromosome> crossBoth(const Chromosome &first, const Chromosome &second) {
         if (rand() % 2 == 0) {
             return Chromosome::crossOnePoint(first, second);
         } else {
@@ -141,7 +143,10 @@ private:
         std::tie(evaluated, evaluatedClausesCount) = this->formula.evaluate(this->genes);
 
         this->notEvaluated = (int) this->formula.clauses.size() - evaluatedClausesCount;
-        return this->weight - ((int) this->formula.clauses.size() - evaluatedClausesCount) * FITNESS_PENALTY;
+        if (this->notEvaluated > 0) {
+            return -this->notEvaluated;
+        }
+        return this->weight;
     }
 };
 

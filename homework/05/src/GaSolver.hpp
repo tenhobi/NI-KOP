@@ -10,8 +10,8 @@
 #include "SAT/Formula.hpp"
 #include "Chromosome.hpp"
 
-#define RESET_THRESHOLD 20
-#define BEST_THRESHOLD 30
+#define RESET_THRESHOLD 10
+#define BEST_THRESHOLD 15
 
 class GaSolver {
 private:
@@ -27,7 +27,7 @@ private:
     int crossoverProbability;
 
     // other
-    int generationsCount = 0;
+    int generationsCount = 1;
     std::vector<Chromosome> chromosomes;
     long lastBestFitness = 0;
     int generationsUnchanged = 0;
@@ -50,15 +50,18 @@ public:
                                          crossoverProbability(crossoverProbability) {}
 
     Chromosome &solve() {
+//        std::cout << "optimal, value, not evaluated" << std::endl;
         solveGa();
-
+        std::sort(this->chromosomes.begin(), this->chromosomes.end());
+        std::cout << this->formula.optimalFitness << ", " << this->chromosomes[0].fitness << ", " << this->chromosomes[0].notEvaluated << std::endl;
         return this->chromosomes[0];
     }
 
 protected:
     void solveGa() {
+
         _initFirstGeneration();
-        while (this->generationsCount <= this->maxGenerationsCount) {
+        while (this->generationsCount < this->maxGenerationsCount) {
             _createNextGeneration();
         }
     }
@@ -77,11 +80,10 @@ protected:
 
     void _createNextGeneration() {
         this->generationsCount++;
-        if (this->generationsCount % 10 == 0) {
-            std::cout << "Generation " << this->generationsCount << std::endl;
-        }
 
         std::sort(this->chromosomes.begin(), this->chromosomes.end());
+
+        std::cout << this->formula.optimalFitness << ", " << this->chromosomes[0].fitness << ", " << this->chromosomes[0].notEvaluated << std::endl;
 
         if (this->lastBestFitness == this->chromosomes[0].fitness) {
             this->generationsUnchanged++;
@@ -93,14 +95,12 @@ protected:
         // Resetting if stuck mechanism.
         if (this->generationsUnchanged == RESET_THRESHOLD && this->chromosomes[0].notEvaluated > 0) {
             this->generationsUnchanged = 0;
-            std::cout << "RESETTING" << std::endl;
             this->_initFirstGeneration();
             return;
         }
 
         // Cannot find better solution.
         if (this->generationsUnchanged == BEST_THRESHOLD && this->chromosomes[0].notEvaluated == 0) {
-            std::cout << "BEST I CAN FOUND" << std::endl;
             this->generationsUnchanged = 0;
 
             std::vector<Chromosome> thisGeneration;
@@ -112,10 +112,6 @@ protected:
 
             return;
         }
-
-        std::cout << this->chromosomes[0].fitness << ", " << this->chromosomes[1].fitness << ", "
-                  << this->chromosomes[2].fitness << ", " << this->chromosomes[0].notEvaluated << ", "
-                  << this->chromosomes[0].weight << std::endl;
 
         // START NEW GENERATION:
         // ---------------------
@@ -130,7 +126,6 @@ protected:
         // Selection
         while ((int) thisGeneration.size() < this->populationCount) {
             this->normalGA(thisGeneration);
-//            this->GAwithDeterministicCrowding(thisGeneration);
         }
 
         // Replace last generation.

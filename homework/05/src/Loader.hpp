@@ -3,15 +3,18 @@
 
 #include <string>
 #include <utility>
+#include <filesystem>
 
 #include "SAT/Formula.hpp"
 
 class Loader {
 private:
     std::string fileName;
+    std::string optFileName;
 
 public:
-    explicit Loader(std::string fileName) : fileName(std::move(fileName)) {}
+    explicit Loader(std::string fileName, std::string optFileName) : fileName(std::move(fileName)),
+                                                                     optFileName(std::move(optFileName)) {}
 
 public:
 
@@ -31,17 +34,19 @@ public:
 
     Formula loadFormula() {
         std::ifstream file(this->fileName);
-
         if (!file.is_open()) {
             std::cout << "Error: Couldn't open the input file." << std::endl;
             exit(2);
         }
+
 
         bool shouldBreak = false;
         std::string id;
         int variablesCount;
         int clausesCount;
         std::vector<int> variablesWeights;
+        bool flagLineWithId = false;
+        std::string optFileId;
 
         // Load id, variablesCount, clausesCount, weights vector
         std::string line;
@@ -57,9 +62,17 @@ public:
                     file.seekg(lastPos);
                     break;
                 case 'c':
+                    if (flagLineWithId) {
+                        flagLineWithId = false;
+                        std::string value;
+                        std::getline(lineStream, value, '/');
+                        std::getline(lineStream, value, '/');
+                        optFileId = value.substr(0, value.size() - 4);;
+                    }
                     break;
                 case 'p':
                     lineStream >> std::skipws >> id >> variablesCount >> clausesCount;
+                    flagLineWithId = true;
                     break;
                 case 'w':
                     lineStream >> std::skipws;
@@ -81,7 +94,7 @@ public:
 
         std::vector<Clause> clauses;
         // Load clauses
-        for (int i = 1; i < clausesCount; i++) {
+        for (int i = 0; i < clausesCount - 1; i++) {
             int one, two, three, nothing;
             file >> one >> two >> three >> nothing;
             std::vector<int> tmp = {one, two, three};
@@ -90,8 +103,29 @@ public:
 
         file.close();
 
-        // TODO: read file to get optimal solution
-        return Formula(id, variablesWeights, clauses);
+        // Optimal fitness discovery.
+        long fitness = -1;
+
+        std::ifstream optFile(this->optFileName);
+        if (optFile.is_open()) {
+            while (std::getline(optFile, line)) {
+                std::istringstream lineStream(line);
+                std::string optId;
+                lineStream >> optId;
+
+                if (optId == optFileId) {
+                    lineStream >> fitness;
+                    break;
+                }
+            }
+        }
+        optFile.close();
+
+        if (fitness == -1) {
+            std::cout << "ERROR, no opt file record" << std::endl;
+        }
+
+        return Formula(id, fitness, variablesWeights, clauses);
     }
 };
 

@@ -4,7 +4,7 @@ Jan Bittner (bittnja3)
 
 == Zadání úlohy
 
-Úkolem je prozkoumat jednu z pokročilých iterativních metod na řešení problému batohu. Vybrána byla metoda genetických algoritmů. Cílem je seznámit se s algoritmem a citlivostí parametrů.
+Úkolem je prozkoumat pomocí evolučního algoritmu zadanou booleovskou formuli `F` o `n` proměnných `X=(x1, x2, ..., xn)` v konjunktivní normální formě a vyřešit přiřazení `Y=(y1, y2, ..., yn)` proměnných `x1, x2, ..., xn` pro zadané kladné váhy proměnných `W=(w1, w2, ..., wn)` tak, že `F(Y) = 1` a součet `S` vah proměnných, které jsou nastaveny na jedinčku, je maximální. Úloha je omezena na 3-SAT problém.
 
 == Použité prostředky
 
@@ -16,7 +16,7 @@ Měření bylo spuštěno z *Bashe* prostřednictvím prostředí WSL 2 (*Window
 
 Na zachycení aktuálního času bylo využito `std::chrono::high_resolution_clock::now()`.
 
-Program je možné zkompilovat pomocí `make compile` a následně spustit s parametry souborů, např. `./program.out data/x.dat`.
+Program je možné zkompilovat pomocí `make compile` a následně spustit s parametrem souboru a souborem s optimálními hodnotami, např. `./program.out data/wuf-20-78/file.mwcnf data/wuf20-78-M-opt.dat`.
 
 === Konfigurace testovacího stroje
 
@@ -24,60 +24,570 @@ Testování bylo provedeno na *Legion 5 15ARH05H*. Stroj obsahuje CPU *AMD Ryzen
 
 == Algoritmus
 
-Genetický algoritmus funguje na principu vylepšování populace v jednotlivých generacích. Chromosomy jsou pro problém batohu jednotlivé konfigurace, tedy bitový vektor pro přítomnost předmětu v batohu, a geny značí jednotlivou přítomnost věcí v konfiguraci batohu.
+Zvoleným algoritmem je *genetický algoritmus*. Algoritmus se inspiruje evolučními procesy v přírodě a postupnou iterací zlepšuje množinu řešení populace pomocí operací selekce, křížení a mutace.
 
-Pro prvotní generaci, která obsahuje náhodné věci s hodnotou větší než je průměr, s pravděpodobností přidání 40 %. Dále je přidána triviální kombinace "všechno jsou nuly" a "všechno jsou jedničky".
+Byla zvolená *generational metoda*, která v každé iteraci vygeneruje novou populaci pomocí operací nad předchozí generací. Celý proces naznačuje následující pseudokód:
 
-Pro každou generaci je pravděpodobnost pro křížení chromozomu a pro jeho mutaci, což do populace přidá další chromozomy. Následně jsou uchovány jen ty nejslibnější chromozomy (ty s větší cenou věcí v batohu, tj. fitness), zbytek je zahozen.
+. Vytvoř výchozí populaci `P`.
+. N-krát opakuj:
+.. Vytvoř novou populaci `P*`.
+.. *Elitismus*: vyber `e` nejlepších jedinců z populace `P` a vlož je do `P*`.
+.. *Selekce*: z populace `P` vyber rodiče.
+.. *Křížení*: s rodiči prověď křížení.
+.. *Mutace*: s potomky prověď mutaci.
+.. Přidej potomky do populace `P*`.
+.. Nahraď původní populaci `P = P*`.
+. Jedinec z populace `P*` s nejlepší hodnotou *fitness* je řešením.
 
-Po vytvoření X generací je řešením první jedinec seřazeného pole chromozomů dle fitness.
+=== Jedinec
 
-== Rámcový popis postupu řešení
+Jedinec je chromozom, který se skládá z genů (bit vector), a reprezentuje nějaké řešení problému. Kvalitu řešení reprezentuje *fitness* jedince.
 
-Algoritmus je implementován dle popisu předchozí kapitoly. Implementovány jsou objekty Chromosome, který obsahuje bitový vektor genů a metody pro křížení a mutaci chromozomu. Zbylý kód, tj. chování tvorby a selekce generací, jsou umístěny v `GaSolver.hpp`.
+=== Populace
 
-== Naměřené výsledky
+Populace je množina jedinců. Jedinci jsou v populaci seřazeni podle jejich *fitness* a jsou na ně aplikovány operace *křížení* a *mutace*. Počáteční populace je generována náhodně, navíc jsou přidány případy se všemi bity nastavenými na hodnotu 0 a 1.
 
-Naměřené výsledky jsou výsledky instancí ze souboru `data/x.dat`, který obsahuje 50 instancí o 40 věcech. Relativní chyba je porovnávána oproti řešení dynamickým programováním z předchozích úkolů. Zaměřeno bylo na prozkoumání závislosti na pravděpodobnost křížení, pravděpodobnost mutace a počtu generací. U všeho byla sledována relativní chyba i časová náročnost.
+=== Fitness
 
-=== Závislost na pravděpodobnosti křížení
+Fitnes určuje kvalitu řešení daného chromozomu a pro případ 3SAT odpovídá fitness hodnotě součtu vah proměnných (genů), které jsou nastaveny na jedničku. Chromozomy které nereprezentují řešení, tedy `F(Y) = 0`, jsou penalizovány za každou nesplněnou klauzuli dané formule.
 
-Pro toto měření byla nastavena velikost populace na 200, maximální počet generací na 100 a pravděpodobnost mutace na 10 %.
+=== Elitismus
 
-Z grafu níže je vidět, že průměrná chyba se udržuje po celou dobu okolo hodnoty 10 %, zatímco maximální chyba se snižuje z 55 % u 20% křížení na 40 % u 100% křížení.
+Elitismus je metoda, která zajistí, že se do nové generace dostane `e` jedinců s nejlepší hodnotou *fitness*. Tím se docílí přežití malého množství kvalitních jedinců. Hodnota `e` by měla být co nejmenší, aby se předešlo degeneraci populace.
 
-image:error_cross.png[]
+=== Selekce
 
-Z grafu níže je vidět, že čím je větší pravděpodobnost křížení, tím je výpočet náročnější, což je zřejmé z implementace, kdy se vytváří více chromozomů.
+Selekce určuje výběr rodičů z předchozí populace, na které jsou dále aplikovány operace *křížení* a *mutace*. Byla implementována náhodná selekce a pro ovlivnění selekčního tlaku následně selekce turnajem. Náhodná selekce je speciální případ pro selekci turnajem kdy parametr turnaje je roven 1. Metoda turnaje náhodně vybere z populace `N` jedinců, které seřadí podle hodnoty *fitness* a vybere nejlepšího z nich.
 
-image:time_cross.png[]
+Selekční tlak je pravděpodobnost výběru nejlepšího jedince. Malý selekční tlak způsobuje pomalou konvergenci a naopak velký selekční tlak může způsobit degeneraci populace.
 
-=== Závislost na pravděpodobnosti mutace
+Výběr dvou rodičů a jejich zpracování křížením a mutací je implementováno standardním algoritmem a byla také implementována metoda *deterministic crowding*. V metodě *deterministic crowding* mezi sebou bojují dva rodiče a jejich potomci, kteří vznikli křížením a případnou mutací. O tom, kdo se přidá do populace, rozhoduje vzdálenost dvojic rodič, potomek.
 
-Pro toto měření byla nastavena velikost populace na 200, maximální počet generací na 100 a pravděpodobnost křížení na 25 %.
+=== Křížení
 
-Z grafu níže je vidět, že průměrná chyba u 10% mutace je cca 10 % a snižuje se postupně až na průměrnou chybu 5% u 100 % mutace. Mutace dle algoritmu pomáhá lepšímu prozkoumání různých řešení. Jde vidět, že podobně se snižuje i maximální chyba z cca 45 % u 10% mutace na cca 22% chybu u 100 % mutace.
+Křížení je operace, která kříží geny dvou jedinců do dvou potomků. Byla implementována metoda jednobodového křížení a uniformního křížení. Křížení způsobuje vznik nových jedinců do populace.
 
-image:error_mutation.png[]
+Jednobodové křížení náhodně zvolí bod a geny do této pozice jsou zkopírovány z prvního rodiče, geny od této pozice jsou zkopírovány z druhého rodiče. A naopak pro druhého potomka.
 
-Z grafu níže je vidět, že algoritmus je nejméně časově náročný u 40% mutace, avšak rozdíly jsou velmi malé.
+Uniformní křížení oproti jednobodovému křížení nepracuje s sekcí chromozomu, ale s každým genem zvlášť. Metoda náhodně vygeneruje bit vector a pro každý gen potomka určuje daný bit rodiče, od kterého si gen zkopíruje. Naopak pro druhého potomka.
 
-image:time_mutation.png[]
+=== Mutace
 
-=== Závislost na počtu generací
+Mutace je operace, která upraví náhodný gen chromozomu, čímž pomáhá proti degeneraci populace.
 
-Pro toto měření byla nastavena velikost populace na 200,pravděpodobnost křížení na 25 % a pravděpodobnost mutace na 10 %.
+=== Vylepšení
 
-Z grafu níže je vidět, že relativní chyba se snižuje z cca 15 % u 5 generací na 10 % u 40 generací. Relativní chyba je naopak nejlepší okolo 25 generací.
+Oproti klasickému algoritmu byly implementovány metody pro vylepšení výsledků. První vylepšení řeší uváznutí ve stavu, který neřeší formuli. Pokud algoritmus produkuje 20 generací po sobě stejného nejlepšího jedince, populace je resetována. Druhé vylepšení
 
-image:error_gen.png[]
+== Testování sad
 
-Z grafu níže je vidět, že nejméně časově náročný je algoritmus u 5 generací a postupně se zvyšuje náročnost až do 25 generací, kde od tohoto bodu se pro měřené instance časová náročnost nezvyšuje.
+=== Sady
 
-image:time_gen.png[]
+Testování probíhalo na přiložených testovacích sadách:
+
+* `wuf-M1`, `wuf-N1` -- Váhy by měly podporovat nalezení řešení. Heuristika, která řeší určitou instanci v sadě wuf-M, by měla řešit odpovídající instanci v sadě wuf-N stejně snadno. Vzhledem k počtu řešení jednotlivých instací (až 108), není možné efektivně najít optimální řešení.
+* `wuf-Q1`, `wuf-R1` -- Jako výše, váhy ale vytvářejí (mírně) zavádějící úlohu.
+* `wuf-A1` -- z dílny prof. Zlomyslného. Instance vycházejí z nezkrácených (nebo jen mírně zkrácených) instancí, takže jsou obtížné. Váhy vytvářejí zavádějící úlohu. Nicméně, malý počet řešení dovoluje ve většině případů uvést optimální řešení.
+
+=== Testování
+
+Nejdříve bylo provedeno testování na různých sadách, s různým počtem proměnných a různým rozložením vah. Toto testování bylo provedeno s předpokladem, že testováním na širokém spektru dat se podaří lépe odhalit možnosti vylepšení. V této sekci tedy bude zkoumána funkčnost algoritmu v jednotlivých výše uvedených sadách a případné odhalené nedostatky budou v další kapitole odstraněny.
+
+Výchozí parametry pro testovací měření byly zvoleny intuicí či podle zkušenosti z minulé úlohy. Tato měření využívá jednobodové křížení a standardní implementaci výběru rodičů.
+
+[%header,cols=2*]
+|===
+|Parametr
+|Hodnota
+
+|Velikost počáteční populace
+|500
+
+|Velikost populace
+|200
+
+|Počet generací
+|200
+
+|Velikost turnaje
+|10
+
+|Elitismus
+|2
+
+|Pravděpodobnost křížení
+|80 %
+
+|Pravděpodobnost mutace
+|40 %
+|===
+
+=== Sada M1
+
+Sada M1 je sada podporující nalezení řešení. Pro 20 proměnných algoritmus našel optimální řešení vždy. Pro 50 proměnných našel algoritmus vždy řešení, ale ne nutně optimální. Z grafu s 50 proměnnými vidíme, že graf se jednou dostal do lokálního extrému, ze kterého se úspěšně dostal resetováním.
+
+Z grafů se zdá, že algoritmus najde řešení příliš rychle, což může vést k uváznutí v lokálním minimu. Bylo by tedy vhodné prozkoumat parametr selekčního tlaku.
+
+[%header,cols=4*]
+|===
+| Počet proměnných
+| Průměrná čas (v ms)
+| Průměrná relativní chyba
+| Maximální relativní chyba
+
+| 20
+| 8209.8
+| 0.0
+| 0.0
+
+| 50
+| 19778.4
+| 0.012
+| 0.032
+|===
+
+image::initial/M1-20.png[]
+image::initial/M1-50.png[]
+
+=== Sada N1
+
+Sada N1 je sada podporující nalezení řešení. Pro 20 proměnných našel algoritmus optimální řešení vždy. Pro 50 proměnných algoritmus našel řešení, ale ne nutně optimální.
+
+[%header,cols=4*]
+|===
+| Počet proměnných
+| Průměrná čas (v ms)
+| Průměrná relativní chyba
+| Maximální relativní chyba
+
+| 20
+| 8511.6
+| 0.0
+| 0.0
+
+| 50
+| 19511.8
+| 0.020
+| 0.037
+|===
+
+
+image::initial/N1-20.png[]
+image::initial/N1-50.png[]
+
+=== Sada Q1
+
+Sada Q1 vytváří mírně zavádějící úlohu svým nastavením vah. Pro 20 proměnných bylo nalezeno optimální řešení vždy. Z druhého grafu pro 50 proměnných je však vidět, že byl nalezen problém, jelikož ani jeden běh úspěšně nenašel řešení.
+
+Jedinci, kteří neposkytují řešení, jsou v této variantě algoritmu penalizováni hodnotou `- notEvaluatedClausolesCount * maxWeight`. Tato hodnota je zjevně nevhodně zvolená, proto bude potřebovat upravit.
+
+Na grafu s 20 proměnnými jde vidět, že by bylo vhodné upravit parametr selekčního tlaku.
+
+image::initial/Q1-20.png[]
+image::initial/Q1-50.png[]
+
+=== Sada R1
+
+Sada R1 je obdobná sadě Q1. Na této sadě algoritmus nenašel řešení ani pro 20 proměnných, ani pro 50 proměnných. Problém je stále nevhodně zvolená hodnota penalizace.
+
+image::initial/R1-20.png[]
+image::initial/R1-50.png[]
+
+=== Sada A1
+
+Sada A1 je z dílny prof. Zlomyslného a váhy vytvářejí zavádějící úlohu. I přes neúspěch algoritmu na sadě Q1 a R1, na sadě A1 je algoritmus najde řešení, ne vždy však optimální.
+
+[%header,cols=3*]
+|===
+|Průměrná čas (v ms)
+|Průměrná relativní chyba
+|Maximální relativní chyba
+
+| 9156.6
+| 0.043
+| 0.072
+|===
+
+image::initial/A1-20.png[]
+
+== Úprava algoritmu
+
+V předchozí kapitole bylo provedeno testování sad pro první verzi algoritmu. Testováním a pozorováním bylo objeveno několik vad, které je nutné zlepšít. Pro to, aby algoritmus zejména našel nějaké řešení je nutné zvolit přísnější hodnotu pro penalizaci jedinců, kteří nejsou řešením formule. Dále je vhodné zvolit menší hodnotu pro čekání na reset populace při uváznutí. Cílem úpravy algoritmu je aby algoritmus našel nějaké řešení pro instance všech sad.
+
+Testování probíhá na stejné konfiguraci parametrů.
+
+=== Sada M1
+
+Této sadě se po úpravě algoritmu lehce zvýšila relativní chyba. I tak ale najde vždy řešení, většinou i optomální.
+
+[%header,cols=4*]
+|===
+| Počet proměnných
+| Průměrná čas (v ms)
+| Průměrná relativní chyba
+| Maximální relativní chyba
+
+| 20
+| 8114.6
+| 0.012
+| 0.032
+
+| 50
+| 19391.8
+| 0.025
+| 0.093
+|===
+
+image::second/M1-20.png[]
+image::second/M1-50.png[]
+
+=== Sada N1
+
+Této sadě se snížila relativní chyba a i s 50 proměnnými nyní najdou téměř vždy optimální hodnotu. S 20 proměnnými najdou optimální hodnotu vždy.
+
+[%header,cols=4*]
+|===
+| Počet proměnných
+| Průměrná čas (v ms)
+| Průměrná relativní chyba
+| Maximální relativní chyba
+
+| 20
+| 8144.8
+| 0.0
+| 0.0
+
+| 50
+| 19416.6
+| 0.002
+| 0.008
+|===
+
+image::second/N1-20.png[]
+image::second/N1-50.png[]
+
+=== Sada Q1
+
+Úprava algoritmu této sadě velmi prospěla. Algoritmus již nalézá řešení, což bylo cílem úpravy algoritmu, i když ne vždy optimální.
+
+[%header,cols=4*]
+|===
+| Počet proměnných
+| Průměrná čas (v ms)
+| Průměrná relativní chyba
+| Maximální relativní chyba
+
+| 20
+| 8119.4
+| 0.050
+| 0.083
+
+| 50
+| 19421
+| 0.118
+| 0.220
+|===
+
+image::second/Q1-20.png[]
+image::second/Q1-50.png[]
+
+=== Sada R1
+
+Úprava algoritmu přinesla velké zlepšení i pro tuto sadu. Při 20 i 50 instancích předchozí algoritmus nenacházel řešení. Nyní řešení nachází. Při 20 proměnných nachází optimální s velmi malou relativní chybou. Naopak při 50 proměnných dosahuje cca 40% relativní chyby od optima. Algoritmus se snaží restartovat populaci, kromě nejlepšího jedince, avšak ani tato metoda nedosahuje požadovaného výsledku, tedy zmenšení relativní chyby.
+
+[%header,cols=4*]
+|===
+| Počet proměnných
+| Průměrná čas (v ms)
+| Průměrná relativní chyba
+| Maximální relativní chyba
+
+| 20
+| 8272.4
+| 0.001
+| 0.007
+
+| 50
+| 19630.8
+| 0.404
+| 0.458
+|===
+
+image::second/R1-20.png[]
+image::second/R1-50.png[]
+
+=== Sada A1
+
+Úravy algoritmu, zdá se, nemají vliv na sadu A1. Relativní chyba, průměrná i maximální, zůstala identická. Algoritmus najde řešení vždy, ne vždy však optimální hodnotu.
+
+[%header,cols=3*]
+|===
+|Průměrná čas (v ms)
+|Průměrná relativní chyba
+|Maximální relativní chyba
+
+| 9024
+| 0.043
+| 0.072
+|===
+
+image::second/A1-20.png[]
+
+=== Shrnutí
+
+Algoritmus se povedlo navrhovanými úpravami opravit, nyní již nachází řešení pro všechny sady.
+
+== Vliv parametrů a metod
+
+Výchozí parametry jsou v tabulce níže. Postupně se budou upravovat dle výsledků měření a pokusů. Jednotlivé grafy zobrazují hodnoty relativní chyby. Výsledky jsou průměrem běhů nad různými typy instancí z různých sad.
+
+[%header,cols=2*]
+|===
+|Parametr
+|Hodnota
+
+|Velikost počáteční populace
+|500
+
+|Velikost populace
+|200
+
+|Počet generací
+|200
+
+|Velikost turnaje
+|10
+
+|Elitismus
+|2
+
+|Pravděpodobnost křížení
+|80 %
+
+|Pravděpodobnost mutace
+|40 %
+|===
+
+=== Vliv křížení
+
+Bylo implementováno jednobodové křížení, uniformní křížení a navíc kombinace předchozích způsobů na základě 50% pravděpodobnosti. Každý způsob křížení je jinak vhodný na určité problémy. Ukázalo se však, že nejlépe si celkově vede v průměru i maximální relativní chybě uniformní křížení s průměrnou relativní chybou 0.1068. Srovnatelně hůře na tom je následně jednobodové křížení a kombinované křížení. Zvolena byla tedy metoda uniformního křížení.
+
+image::params/cross.png[]
+
+=== Vliv elitismu a velikosti turnaje
+
+Elitismus určuje, zda a kolik nejlepších jedinců automaticky přejde do nové generace. Velikost turnaje určuje selekční tlak. Bude se zkoumat vliv elitismu (hodnoty 0, 1, 2) při velikosti turnaje (hodnoty 3 a 10). Je předpoklad, že elitismus bude potřeba nastaven, jelikož nám zachovává jedince blížícího se optimu.
+
+Pro elitismus = 0, což znamená že nepřenášíme nejlepšího jedince do další generace, byly naměřeny nejhorší průměrné i maximální relativní chyby. Navíc, pro několik běhů algoritmu nebylo ani nalezeno řešení. Lze vidět, že pro větší turnaj je průměrná chyba nižší, což je s předpokladem -- vybíráme nejlepší ohodnocení z více jedinců, tudíž máme větší šanci vybrat nejlepšího.
+
+Pro elitismus 1 a 2 nastává při změně turnaje z 10 na 3 mírné zlepšení. Stejně tak nastává mírné zlepšení při přechodu elitismu z 2 na 3. Nejoptimálnější hodnota dle měření je tedy elitismu = 2, turnaj = 3.
+
+image::params/elitism-t10.png[]
+image::params/elitism-t3.png[]
+
+=== Vliv způsobu selekce
+
+Byl zkoumán vliv způsobu selekce. Předpokladem bylo, že bude metoda *deterministic crowding* vhodnější, jelikož by měla umožňovat přidávat do populace jedince na základě podobnosti. Měřením a ani žádnou další dodatečnou modifikací parametrů (např. pravděpodobnosti křížení a mutace) se nepodařilo tento předpoklad potvrdit.
+
+image::params/select.png[]
+
+=== Vliv pravděpodobnosti křížení
+
+Pravděpodobnost křížení určuje šanci, s jakou se rodiče skříží a vytvoří novou variantu potomka, v tomto případě pomocí jednobodového křížení. Předpoklad je, že by se měla ideální pravděpodobnost blížit k 1, pro rozvoj populace a dobrání se výsledku.
+
+Z naměřených dat jde vidět, že nejlepší hodnoty relativní chyby dosahuje algoritmus v okolí 70 %.
+
+image::params/crossover.png[]
+
+=== Vliv pravděpodobnosti mutace
+
+Pravděpodobnost mutace ovlivňuje náhodné prohození genu jedince. To umožní náhodné rozšíření populace o nového jedince. Předpokladem je, že by tato hodnota měla být spíše malá, jinak může mít vliv na degeneraci populace přílišným mutováním.
+
+Nejlepší výsledky se naměřily okolo hodnoty 30 %.
+
+image::params/mutation.png[]
+
+== Finální přehled
+
+V této kapitole je zobrazen přehled finálně nastaveného algoritmu. Jsou použity následující parametry:
+
+[%header,cols=2*]
+|===
+|Parametr
+|Hodnota
+
+|Velikost počáteční populace
+|500
+
+|Velikost populace
+|200
+
+|Počet generací
+|200
+
+|Velikost turnaje
+|3
+
+|Elitismus
+|2
+
+|Pravděpodobnost křížení
+|70 %
+
+|Pravděpodobnost mutace
+|30 %
+|===
+
+=== Sada M1
+
+Pro sadu M1 se povedlo zlepšit relativní chybu, pro 20 proměnných je chyba 0 a najde tedy vždy optimální řešení. Pro 50 proměnných se relativní chyba taktéž změnčila a algoritmus najde optimální řešení častěji.
+
+[%header,cols=4*]
+|===
+| Počet proměnných
+| Průměrná čas (v ms)
+| Průměrná relativní chyba
+| Maximální relativní chyba
+
+| 20
+| 4510.4
+| 0.000
+| 0.000
+
+| 50
+| 10665.8
+| 0.004
+| 0.012
+|===
+
+image::final/M1-20.png[]
+image::final/M1-50.png[]
+
+=== Sada N1
+
+Pro sadu N1 pro 20 proměnných je ve všech verzích, i této, nalezeno optimální řešení. V této verzi bylo pro 50 proměnných této sady nalezeno optimální řešení vždy, což je oproti druhé verzi zlepšení.
+
+[%header,cols=4*]
+|===
+| Počet proměnných
+| Průměrná čas (v ms)
+| Průměrná relativní chyba
+| Maximální relativní chyba
+
+| 20
+| 4489.4
+| 0.000
+| 0.000
+
+| 50
+| 10631.2
+| 0.000
+| 0.000
+|===
+
+image::final/N1-20.png[]
+image::final/N1-50.png[]
+
+=== Sada Q1
+
+Sada Q1 dosahuje pro 20 proměnných výrazně lepší průměrné relativní chyby. Pro řešení 50 promměných byla relativní chyba zlepšena druhou verzí a i touto, třetí, verzí byla relativní chyba znatelně zmenšena.
+
+[%header,cols=4*]
+|===
+| Počet proměnných
+| Průměrná čas (v ms)
+| Průměrná relativní chyba
+| Maximální relativní chyba
+
+| 20
+| 4469
+| 0.017
+| 0.083
+
+| 50
+| 10768.8
+| 0.089
+| 0.122
+|===
+
+image::final/Q1-20.png[]
+image::final/Q1-50.png[]
+
+=== Sada R1
+
+Sada R1 nenalezla v první verzi algoritmu řešení, ve druhé jej našla s relativní chybou a v této verzi pro 20 proměnných bylo naměřeno optimální řešení vždy. Obdobně i pro verzi s 50 proměnnými, které však nenajde optimální řešení nikdy, ale místo toho konverguje k nějaké hodnotě, která je však blíže optimu než-li u druhé verze algoritmu.
+
+[%header,cols=4*]
+|===
+| Počet proměnných
+| Průměrná čas (v ms)
+| Průměrná relativní chyba
+| Maximální relativní chyba
+
+| 20
+| 4484.8
+| 0.000
+| 0.000
+
+| 50
+| 10691.2
+| 0.383
+| 0.396
+|===
+
+image::final/R1-20.png[]
+image::final/R1-50.png[]
+
+=== Sada A1
+
+Pro sadu A1 bylo naměřeno optimální řešení vždy.
+
+[%header,cols=4*]
+|===
+| Počet proměnných
+| Průměrná čas (v ms)
+| Průměrná relativní chyba
+| Maximální relativní chyba
+
+| 20
+| 4947.6
+| 0.000
+| 0.000
+|===
+
+image::final/A1-20.png[]
 
 == Závěr
 
-Byl implementován algoritmus genetického programování pro problém batohu a byly prozkoumány závislosti výsledků algoritmu na změně parametrů počtu generací a pravděpodobnosti křížení a mutace.
+Bylo implementováno řešení 3SAT pomocí genetického algoritmu. Algoritmus navíc využívá strategie restartu při uvíznutí v optimu a při hledání lepšího řešení. Bylo experimentováno s typy křížení (jednobodové a uniformní) a typem selekce (klasické a deterministický crowding).
 
-Algoritmus je pomalejší než algoritmus dynamického programování, oproti kterému byla testována relativní chyba. Tento algoritmus je ale univerzálnější a snadnější na implementaci.
+Po původní implementaci algoritmu bylo provedeno měření na všech sadách, které zkoumalo obecné chování algoritmu. Pro sady Q a R měl algoritmus velké problémy (řešení nebylo nalezeno), které byly odhaleny a napraveny ve druhé verzi algoritmu, pro které bylo také provedeno kontrolní měření. Následně se přešlo do fáze ladění parametrů, kde byly odhaleny zřejmě nejvhodnější parametry, které byly následně znovu použity na měření vůči všem sadám s finální verzí algoritmu.
+
+Výsledné nastavení parametrů bylo určeno následovně:
+
+[%header,cols=2*]
+|===
+|Parametr
+|Hodnota
+
+|Velikost počáteční populace
+|500
+
+|Velikost populace
+|200
+
+|Počet generací
+|200
+
+|Velikost turnaje
+|3
+
+|Elitismus
+|2
+
+|Pravděpodobnost křížení
+|70 %
+
+|Pravděpodobnost mutace
+|30 %
+|===

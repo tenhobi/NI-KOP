@@ -12,21 +12,21 @@
 
 #define INITIAL_POPULATION_COUNT 500
 #define POPULATION_COUNT 200
-#define MAX_GENERATIONS_COUNT 500
-#define TOURNAMENT_SIZE 10
-#define ELITISM 1
-#define MUTATION_PROBABILITY 40 // percent
-#define CROSSOVER_PROBABILITY 80 // percent
+#define MAX_GENERATIONS_COUNT 200
+#define TOURNAMENT_SIZE 3
+#define ELITISM 2
+#define MUTATION_PROBABILITY 30 // percent
+#define CROSSOVER_PROBABILITY 70 // percent
 
 int main(int argc, char **argv) {
     srand((unsigned int) time(NULL));
 
-    if (argc <= 1) {
+    if (argc <= 2) {
         std::cout << "Error: Invalid number of arguments." << std::endl;
         return 1;
     }
 
-    Loader loader = Loader(argv[1]);
+    Loader loader = Loader(argv[1], argv[2]);
     Formula formula = loader.loadFormula();
 
     GaSolver solver = GaSolver(formula,
@@ -37,9 +37,16 @@ int main(int argc, char **argv) {
                                ELITISM,
                                MUTATION_PROBABILITY,
                                CROSSOVER_PROBABILITY);
+
+
+    // TIMER START
+    auto start = std::chrono::high_resolution_clock::now();
     Chromosome result = solver.solve();
-    result.toString();
-    std::cout << result.fitness << std::endl;
+    auto finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = (finish - start);
+    auto durationInMicro = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+    // TIMER END
+    std::cout << durationInMicro << std::endl;
 
 //    formula.toString();
     // uf20-01 6403

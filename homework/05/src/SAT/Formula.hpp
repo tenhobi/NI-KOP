@@ -9,14 +9,17 @@
 class Formula {
 public:
     std::string id;
+    long optimalFitness;
     std::vector<int> weights;
     std::vector<Clause> clauses;
 
     Formula() = default;
 
     explicit Formula(std::string id,
+                     long optimalFitness,
                      std::vector<int> weights,
                      std::vector<Clause> clauses) : id(std::move(id)),
+                                                    optimalFitness(optimalFitness),
                                                     weights(std::move(weights)),
                                                     clauses(std::move(clauses)) {}
 
