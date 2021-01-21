@@ -4,6 +4,8 @@
 #include <string>
 #include <utility>
 #include <filesystem>
+#include <vector>
+#include <fstream>
 
 #include "SAT/Formula.hpp"
 

@@ -77,11 +77,9 @@ Mutace je operace, která upraví náhodný gen chromozomu, čímž pomáhá pro
 
 === Vylepšení
 
-Oproti klasickému algoritmu byly implementovány metody pro vylepšení výsledků. První vylepšení řeší uváznutí ve stavu, který neřeší formuli. Pokud algoritmus produkuje 20 generací po sobě stejného nejlepšího jedince, populace je resetována. Druhé vylepšení
+Oproti klasickému algoritmu byly implementovány metody pro vylepšení výsledků. Bylo implementováno řešení pomocí restartování populace dvěma způsoby. První případ nastává v situaci, kdy algoritmus uvázne v lokálním maximu bez nalezeného řešení, v takovém případě se resetuje celá populace. Druhý případ nastává v situaci, kdy algoritmus našel nějaké řešení a uvázl nějakém maximu. Algoritmus neví, zda-li našel optimální řešení či ne, proto se resetuje celá populace kromě jedince s nějvětší hodnotou fitness.
 
-== Testování sad
-
-=== Sady
+== Testovací sady
 
 Testování probíhalo na přiložených testovacích sadách:
 
@@ -89,9 +87,12 @@ Testování probíhalo na přiložených testovacích sadách:
 * `wuf-Q1`, `wuf-R1` -- Jako výše, váhy ale vytvářejí (mírně) zavádějící úlohu.
 * `wuf-A1` -- z dílny prof. Zlomyslného. Instance vycházejí z nezkrácených (nebo jen mírně zkrácených) instancí, takže jsou obtížné. Váhy vytvářejí zavádějící úlohu. Nicméně, malý počet řešení dovoluje ve většině případů uvést optimální řešení.
 
+<<<
+== Prvotní testování sad
+
 === Testování
 
-Nejdříve bylo provedeno testování na různých sadách, s různým počtem proměnných a různým rozložením vah. Toto testování bylo provedeno s předpokladem, že testováním na širokém spektru dat se podaří lépe odhalit možnosti vylepšení. V této sekci tedy bude zkoumána funkčnost algoritmu v jednotlivých výše uvedených sadách a případné odhalené nedostatky budou v další kapitole odstraněny.
+Nejdříve bylo provedeno testování na různých sadách, s různým počtem proměnných a různým rozložením vah. Toto testování bylo provedeno s předpokladem, že testováním na širokém spektru dat se podaří lépe odhalit možnosti vylepšení či dokonce závažné chyby. V této sekci tedy bude zkoumána funkčnost algoritmu v jednotlivých výše uvedených sadách a případné odhalené nedostatky budou v další kapitole odstraněny. Pro detailní zkoumání grafu byla vybrána jedna instance z jedné sady. Bylo ověřeno, že obdobně se chovají ostatní instance z dané sady. Na každé instanci bylo provedeno 5 běhů a je zkoumán vývoj nejlepšího jedince na základě generace.
 
 Výchozí parametry pro testovací měření byly zvoleny intuicí či podle zkušenosti z minulé úlohy. Tato měření využívá jednobodové křížení a standardní implementaci výběru rodičů.
 
@@ -122,11 +123,12 @@ Výchozí parametry pro testovací měření byly zvoleny intuicí či podle zku
 |40 %
 |===
 
+<<<
 === Sada M1
 
 Sada M1 je sada podporující nalezení řešení. Pro 20 proměnných algoritmus našel optimální řešení vždy. Pro 50 proměnných našel algoritmus vždy řešení, ale ne nutně optimální. Z grafu s 50 proměnnými vidíme, že graf se jednou dostal do lokálního extrému, ze kterého se úspěšně dostal resetováním.
 
-Z grafů se zdá, že algoritmus najde řešení příliš rychle, což může vést k uváznutí v lokálním minimu. Bylo by tedy vhodné prozkoumat parametr selekčního tlaku.
+Z grafů se zdá, že algoritmus najde řešení příliš rychle, což může vést k uváznutí v lokálním maximu. Bylo by tedy vhodné později prozkoumat parametr selekčního tlaku.
 
 [%header,cols=4*]
 |===
@@ -146,9 +148,10 @@ Z grafů se zdá, že algoritmus najde řešení příliš rychle, což může v
 | 0.032
 |===
 
-image::initial/M1-20.png[]
-image::initial/M1-50.png[]
+image::initial/M1-20.png[align="center"]
+image::initial/M1-50.png[align="center"]
 
+<<<
 === Sada N1
 
 Sada N1 je sada podporující nalezení řešení. Pro 20 proměnných našel algoritmus optimální řešení vždy. Pro 50 proměnných algoritmus našel řešení, ale ne nutně optimální.
@@ -171,31 +174,33 @@ Sada N1 je sada podporující nalezení řešení. Pro 20 proměnných našel al
 | 0.037
 |===
 
+image::initial/N1-20.png[align="center"]
+image::initial/N1-50.png[align="center"]
 
-image::initial/N1-20.png[]
-image::initial/N1-50.png[]
-
+<<<
 === Sada Q1
 
 Sada Q1 vytváří mírně zavádějící úlohu svým nastavením vah. Pro 20 proměnných bylo nalezeno optimální řešení vždy. Z druhého grafu pro 50 proměnných je však vidět, že byl nalezen problém, jelikož ani jeden běh úspěšně nenašel řešení.
 
-Jedinci, kteří neposkytují řešení, jsou v této variantě algoritmu penalizováni hodnotou `- notEvaluatedClausolesCount * maxWeight`. Tato hodnota je zjevně nevhodně zvolená, proto bude potřebovat upravit.
+Z grafu lze vidět, že může být problém s hodnotou penalizace nevalidních řešení, tj. jedinců, kteří neplní všechny klauzule formule. Tito jedinci dokonce získávají vyšší hodnotu fitness než optimální řešení, což značí chybu zvolené hodnoty. Jedinci, kteří neposkytují řešení, jsou v této variantě algoritmu penalizováni hodnotou `- notEvaluatedClausolesCount * maxWeight`. Tato hodnota je zjevně nevhodně zvolená, proto bude potřebovat upravit.
 
 Na grafu s 20 proměnnými jde vidět, že by bylo vhodné upravit parametr selekčního tlaku.
 
-image::initial/Q1-20.png[]
-image::initial/Q1-50.png[]
+image::initial/Q1-20.png[align="center"]
+image::initial/Q1-50.png[align="center"]
 
+<<<
 === Sada R1
 
-Sada R1 je obdobná sadě Q1. Na této sadě algoritmus nenašel řešení ani pro 20 proměnných, ani pro 50 proměnných. Problém je stále nevhodně zvolená hodnota penalizace.
+Sada R1 je obdobná sadě Q1. Obdobné jsou i problémy výše zmíněné. Na této sadě algoritmus nenašel řešení ani pro 20 proměnných, ani pro 50 proměnných. Problém je zřejmě stále nevhodně zvolená hodnota penalizace.
 
-image::initial/R1-20.png[]
-image::initial/R1-50.png[]
+image::initial/R1-20.png[align="center"]
+image::initial/R1-50.png[align="center"]
 
+<<<
 === Sada A1
 
-Sada A1 je z dílny prof. Zlomyslného a váhy vytvářejí zavádějící úlohu. I přes neúspěch algoritmu na sadě Q1 a R1, na sadě A1 je algoritmus najde řešení, ne vždy však optimální.
+Sada A1 je z dílny prof. Zlomyslného a váhy vytvářejí zavádějící úlohu. I přes neúspěch algoritmu na sadě Q1 a R1, na sadě A1 obvykle algoritmus najde řešení, ne vždy však optimální.
 
 [%header,cols=3*]
 |===
@@ -208,14 +213,16 @@ Sada A1 je z dílny prof. Zlomyslného a váhy vytvářejí zavádějící úloh
 | 0.072
 |===
 
-image::initial/A1-20.png[]
+image::initial/A1-20.png[align="center"]
 
-== Úprava algoritmu
+<<<
+== Testování upraveného algoritmu
 
 V předchozí kapitole bylo provedeno testování sad pro první verzi algoritmu. Testováním a pozorováním bylo objeveno několik vad, které je nutné zlepšít. Pro to, aby algoritmus zejména našel nějaké řešení je nutné zvolit přísnější hodnotu pro penalizaci jedinců, kteří nejsou řešením formule. Dále je vhodné zvolit menší hodnotu pro čekání na reset populace při uváznutí. Cílem úpravy algoritmu je aby algoritmus našel nějaké řešení pro instance všech sad.
 
-Testování probíhá na stejné konfiguraci parametrů.
+Testování probíhá na stejné konfiguraci parametrů a na stejném principu jako předešlé testování.
 
+<<<
 === Sada M1
 
 Této sadě se po úpravě algoritmu lehce zvýšila relativní chyba. I tak ale najde vždy řešení, většinou i optomální.
@@ -238,9 +245,10 @@ Této sadě se po úpravě algoritmu lehce zvýšila relativní chyba. I tak ale
 | 0.093
 |===
 
-image::second/M1-20.png[]
-image::second/M1-50.png[]
+image::second/M1-20.png[align="center"]
+image::second/M1-50.png[align="center"]
 
+<<<
 === Sada N1
 
 Této sadě se snížila relativní chyba a i s 50 proměnnými nyní najdou téměř vždy optimální hodnotu. S 20 proměnnými najdou optimální hodnotu vždy.
@@ -263,9 +271,10 @@ Této sadě se snížila relativní chyba a i s 50 proměnnými nyní najdou té
 | 0.008
 |===
 
-image::second/N1-20.png[]
-image::second/N1-50.png[]
+image::second/N1-20.png[align="center"]
+image::second/N1-50.png[align="center"]
 
+<<<
 === Sada Q1
 
 Úprava algoritmu této sadě velmi prospěla. Algoritmus již nalézá řešení, což bylo cílem úpravy algoritmu, i když ne vždy optimální.
@@ -288,9 +297,10 @@ image::second/N1-50.png[]
 | 0.220
 |===
 
-image::second/Q1-20.png[]
-image::second/Q1-50.png[]
+image::second/Q1-20.png[align="center"]
+image::second/Q1-50.png[align="center"]
 
+<<<
 === Sada R1
 
 Úprava algoritmu přinesla velké zlepšení i pro tuto sadu. Při 20 i 50 instancích předchozí algoritmus nenacházel řešení. Nyní řešení nachází. Při 20 proměnných nachází optimální s velmi malou relativní chybou. Naopak při 50 proměnných dosahuje cca 40% relativní chyby od optima. Algoritmus se snaží restartovat populaci, kromě nejlepšího jedince, avšak ani tato metoda nedosahuje požadovaného výsledku, tedy zmenšení relativní chyby.
@@ -313,9 +323,10 @@ image::second/Q1-50.png[]
 | 0.458
 |===
 
-image::second/R1-20.png[]
-image::second/R1-50.png[]
+image::second/R1-20.png[align="center"]
+image::second/R1-50.png[align="center"]
 
+<<<
 === Sada A1
 
 Úravy algoritmu, zdá se, nemají vliv na sadu A1. Relativní chyba, průměrná i maximální, zůstala identická. Algoritmus najde řešení vždy, ne vždy však optimální hodnotu.
@@ -331,15 +342,17 @@ image::second/R1-50.png[]
 | 0.072
 |===
 
-image::second/A1-20.png[]
+image::second/A1-20.png[align="center"]
 
 === Shrnutí
 
 Algoritmus se povedlo navrhovanými úpravami opravit, nyní již nachází řešení pro všechny sady.
 
+<<<
 == Vliv parametrů a metod
 
-Výchozí parametry jsou v tabulce níže. Postupně se budou upravovat dle výsledků měření a pokusů. Jednotlivé grafy zobrazují hodnoty relativní chyby. Výsledky jsou průměrem běhů nad různými typy instancí z různých sad.
+V této kapitole bude cíl najít nejvhodnější parametry pro algoritmus.
+Výchozí parametry jsou v tabulce níže. Postupně se budou upravovat dle výsledků měření a pokusů. Jednotlivé grafy zobrazují hodnoty relativní chyby. Výsledky jsou průměrem běhů nad 20 různými instancemi z každé sady.
 
 [%header,cols=2*]
 |===
@@ -368,12 +381,14 @@ Výchozí parametry jsou v tabulce níže. Postupně se budou upravovat dle výs
 |40 %
 |===
 
+<<<
 === Vliv křížení
 
 Bylo implementováno jednobodové křížení, uniformní křížení a navíc kombinace předchozích způsobů na základě 50% pravděpodobnosti. Každý způsob křížení je jinak vhodný na určité problémy. Ukázalo se však, že nejlépe si celkově vede v průměru i maximální relativní chybě uniformní křížení s průměrnou relativní chybou 0.1068. Srovnatelně hůře na tom je následně jednobodové křížení a kombinované křížení. Zvolena byla tedy metoda uniformního křížení.
 
-image::params/cross.png[]
+image::params/cross.png[align="center"]
 
+<<<
 === Vliv elitismu a velikosti turnaje
 
 Elitismus určuje, zda a kolik nejlepších jedinců automaticky přejde do nové generace. Velikost turnaje určuje selekční tlak. Bude se zkoumat vliv elitismu (hodnoty 0, 1, 2) při velikosti turnaje (hodnoty 3 a 10). Je předpoklad, že elitismus bude potřeba nastaven, jelikož nám zachovává jedince blížícího se optimu.
@@ -382,34 +397,38 @@ Pro elitismus = 0, což znamená že nepřenášíme nejlepšího jedince do dal
 
 Pro elitismus 1 a 2 nastává při změně turnaje z 10 na 3 mírné zlepšení. Stejně tak nastává mírné zlepšení při přechodu elitismu z 2 na 3. Nejoptimálnější hodnota dle měření je tedy elitismu = 2, turnaj = 3.
 
-image::params/elitism-t10.png[]
-image::params/elitism-t3.png[]
+image::params/elitism-t10.png[align="center"]
+image::params/elitism-t3.png[align="center"]
 
+<<<
 === Vliv způsobu selekce
 
 Byl zkoumán vliv způsobu selekce. Předpokladem bylo, že bude metoda *deterministic crowding* vhodnější, jelikož by měla umožňovat přidávat do populace jedince na základě podobnosti. Měřením a ani žádnou další dodatečnou modifikací parametrů (např. pravděpodobnosti křížení a mutace) se nepodařilo tento předpoklad potvrdit.
 
-image::params/select.png[]
+image::params/select.png[align="center"]
 
+<<<
 === Vliv pravděpodobnosti křížení
 
 Pravděpodobnost křížení určuje šanci, s jakou se rodiče skříží a vytvoří novou variantu potomka, v tomto případě pomocí jednobodového křížení. Předpoklad je, že by se měla ideální pravděpodobnost blížit k 1, pro rozvoj populace a dobrání se výsledku.
 
 Z naměřených dat jde vidět, že nejlepší hodnoty relativní chyby dosahuje algoritmus v okolí 70 %.
 
-image::params/crossover.png[]
+image::params/crossover.png[align="center"]
 
+<<<
 === Vliv pravděpodobnosti mutace
 
 Pravděpodobnost mutace ovlivňuje náhodné prohození genu jedince. To umožní náhodné rozšíření populace o nového jedince. Předpokladem je, že by tato hodnota měla být spíše malá, jinak může mít vliv na degeneraci populace přílišným mutováním.
 
 Nejlepší výsledky se naměřily okolo hodnoty 30 %.
 
-image::params/mutation.png[]
+image::params/mutation.png[align="center"]
 
-== Finální přehled
+<<<
+== Finální přehled testování
 
-V této kapitole je zobrazen přehled finálně nastaveného algoritmu. Jsou použity následující parametry:
+V této kapitole je zobrazen přehled finálně nastaveného algoritmu. Jsou použity parametry zobrazy v tabulce níže. Testování probíhá na stejném principu jako předešlé testování.
 
 [%header,cols=2*]
 |===
@@ -438,6 +457,7 @@ V této kapitole je zobrazen přehled finálně nastaveného algoritmu. Jsou pou
 |30 %
 |===
 
+<<<
 === Sada M1
 
 Pro sadu M1 se povedlo zlepšit relativní chybu, pro 20 proměnných je chyba 0 a najde tedy vždy optimální řešení. Pro 50 proměnných se relativní chyba taktéž změnčila a algoritmus najde optimální řešení častěji.
@@ -460,9 +480,10 @@ Pro sadu M1 se povedlo zlepšit relativní chybu, pro 20 proměnných je chyba 0
 | 0.012
 |===
 
-image::final/M1-20.png[]
-image::final/M1-50.png[]
+image::final/M1-20.png[align="center"]
+image::final/M1-50.png[align="center"]
 
+<<<
 === Sada N1
 
 Pro sadu N1 pro 20 proměnných je ve všech verzích, i této, nalezeno optimální řešení. V této verzi bylo pro 50 proměnných této sady nalezeno optimální řešení vždy, což je oproti druhé verzi zlepšení.
@@ -485,9 +506,10 @@ Pro sadu N1 pro 20 proměnných je ve všech verzích, i této, nalezeno optimá
 | 0.000
 |===
 
-image::final/N1-20.png[]
-image::final/N1-50.png[]
+image::final/N1-20.png[align="center"]
+image::final/N1-50.png[align="center"]
 
+<<<
 === Sada Q1
 
 Sada Q1 dosahuje pro 20 proměnných výrazně lepší průměrné relativní chyby. Pro řešení 50 promměných byla relativní chyba zlepšena druhou verzí a i touto, třetí, verzí byla relativní chyba znatelně zmenšena.
@@ -510,9 +532,10 @@ Sada Q1 dosahuje pro 20 proměnných výrazně lepší průměrné relativní ch
 | 0.122
 |===
 
-image::final/Q1-20.png[]
-image::final/Q1-50.png[]
+image::final/Q1-20.png[align="center"]
+image::final/Q1-50.png[align="center"]
 
+<<<
 === Sada R1
 
 Sada R1 nenalezla v první verzi algoritmu řešení, ve druhé jej našla s relativní chybou a v této verzi pro 20 proměnných bylo naměřeno optimální řešení vždy. Obdobně i pro verzi s 50 proměnnými, které však nenajde optimální řešení nikdy, ale místo toho konverguje k nějaké hodnotě, která je však blíže optimu než-li u druhé verze algoritmu.
@@ -535,9 +558,10 @@ Sada R1 nenalezla v první verzi algoritmu řešení, ve druhé jej našla s rel
 | 0.396
 |===
 
-image::final/R1-20.png[]
-image::final/R1-50.png[]
+image::final/R1-20.png[align="center"]
+image::final/R1-50.png[align="center"]
 
+<<<
 === Sada A1
 
 Pro sadu A1 bylo naměřeno optimální řešení vždy.
@@ -555,13 +579,49 @@ Pro sadu A1 bylo naměřeno optimální řešení vždy.
 | 0.000
 |===
 
-image::final/A1-20.png[]
+image::final/A1-20.png[align="center"]
 
+<<<
 == Závěr
 
 Bylo implementováno řešení 3SAT pomocí genetického algoritmu. Algoritmus navíc využívá strategie restartu při uvíznutí v optimu a při hledání lepšího řešení. Bylo experimentováno s typy křížení (jednobodové a uniformní) a typem selekce (klasické a deterministický crowding).
 
-Po původní implementaci algoritmu bylo provedeno měření na všech sadách, které zkoumalo obecné chování algoritmu. Pro sady Q a R měl algoritmus velké problémy (řešení nebylo nalezeno), které byly odhaleny a napraveny ve druhé verzi algoritmu, pro které bylo také provedeno kontrolní měření. Následně se přešlo do fáze ladění parametrů, kde byly odhaleny zřejmě nejvhodnější parametry, které byly následně znovu použity na měření vůči všem sadám s finální verzí algoritmu.
+Po původní implementaci algoritmu bylo provedeno testování na všech sadách, které zkoumalo obecné chování algoritmu. Pro sady Q1 a R1 měl algoritmus velké problémy (řešení nebylo nalezeno), které byly odhaleny a napraveny ve druhé verzi algoritmu, pro které bylo také provedeno kontrolní testování. Následně se přešlo do fáze ladění parametrů, kde byly odhaleny zřejmě nejvhodnější parametry, které byly následně znovu použity na měření vůči všem sadám s finální verzí algoritmu.
+
+Algoritmus se téměř 2x zrychlil po zjištění lepších hodnot parametrů. Z průměrného času 8000 ms při 20 proměnných a 19000 ms při 50 proměnných na průměrný čas 4000 ms při 20 proměnných a 10000 ms při 50 proměnných. Toto zlepšení nastalo zřejmě díky zmenšení parametru velikosti turnaje.
+
+Finální nastavení algoritmu bylo spuštěno na všechny instance s 50 proměnnými (pro sadu A na 20 proměnných) se známým optimálním řešením. Celkově jsou výsledky heuristiky velmi dobré. Celková průměrná relativní chyba řešení je 8 %, celková maximální relativní chyba je 29 %. Dle měření maximální průměrná relativní chyba je 17.87 %. Výsledky jsou tedy velmi uspokojivé a v průměru algoritmus nachází optimální řešení s velkou pravděpodobností. Tabulku měření lze vidět na tabulce níže:
+
+[cols=3*, options="header,footer"]
+|===
+|Sada (proměnné-klauzule)
+|Průměrná relativní chyba
+|Maximální relativní chyba
+
+|M1 50-201
+|0.0058
+|0.1195
+
+|N1 50-201
+|0.0020
+|0.0237
+
+|Q1 50-201
+|0.1787
+|0.3955
+
+|R1 50-201
+|0.1599
+|0.4518
+
+|A1 20-88
+|0.0561
+|0.4795
+
+|průměrně celkem
+|0.0805
+|0.2940
+|===
 
 Výsledné nastavení parametrů bylo určeno následovně:
 
