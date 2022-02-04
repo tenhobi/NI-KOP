@@ -4,7 +4,7 @@ My work on NI-KOP in semester B201 at [FIT CTU](https://fit.cvut.cz/en).
 
 ## TL;DR
 
-It ain't mutch, but it's an honest work. :thumbsup:
+It ain't much, but it's honest work. :thumbsup:
 
 ## [Homework](homework)
 
